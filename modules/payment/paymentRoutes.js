@@ -25,7 +25,7 @@ router.get('/tokenPrice',getTokenPrice)
 
 
 
-router.get('/checkout',paymentValidator.validateUserEmail(),paymentValidator.result, paymentSession)
+// router.get('/checkout',paymentValidator.validateUserEmail(),paymentValidator.result, paymentSession)
 
 
 // router.get('/complete', async (req, res) => {
@@ -39,12 +39,12 @@ router.get('/checkout',paymentValidator.validateUserEmail(),paymentValidator.res
 //   res.send('Your payment was successful')
 // })
 
-router.get('/cancel', (req, res) => {
-  res.redirect(`${process.env.FRONT_END_BASE_URL}/`);
-})
+// router.get('/cancel', (req, res) => {
+//   res.redirect(`${process.env.FRONT_END_BASE_URL}/`);
+// })
 
 
-router.get('/verify', verifyPayment)
+// router.get('/verify', verifyPayment)
 
 
 export default router;

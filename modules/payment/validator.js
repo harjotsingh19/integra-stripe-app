@@ -7,7 +7,7 @@ import { messages, statusCode, responseStatus } from "../../core/constants/const
 class Validator {
 
     validateUserEmail() {
-        console.log("inside validate email");
+
         return [
             check('email')
                 .optional()
@@ -26,15 +26,15 @@ class Validator {
                     //     throw new Error(messages.userNotVerified);
                     // }
 
-                   
-                    
+
+
                 )
 
         ]
     }
 
     result(req, res, next) {
-        console.log("inside validate result");
+       
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             errors.array().forEach(err => console.log("err", err))

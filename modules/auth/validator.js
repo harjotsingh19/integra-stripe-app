@@ -89,7 +89,7 @@ class Validator {
     // }
 
     validateUserLogin() {
-        console.log("inside validate login");
+        // console.log("inside validate login");
         return [
             check('password').trim().notEmpty().withMessage('Password is required.'),
             check('emailId')
@@ -130,14 +130,14 @@ class Validator {
 
     
     validateRefreshToken() {
-        console.log("checkkkkkkkk");
+        // console.log("checkkkkkkkk");
         return [
             check('refreshToken').trim().notEmpty().withMessage('Refresh token is required.')
         ]
     }
 
     result(req, res, next) {
-        console.log("inside validate result");
+        // console.log("inside validate result");
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             errors.array().forEach(err => console.log("err", err))
