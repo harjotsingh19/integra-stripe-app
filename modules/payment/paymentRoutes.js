@@ -16,9 +16,9 @@ import Validator from "./validator.js";
 const paymentValidator = new Validator();
 const router = express.Router();
 
-router.get('/method/attach', attachPaymentMethod);
+router.post('/method/attach', attachPaymentMethod);
 router.get('/method', listPaymentMethods);
-router.get('/create', createPaymentIntent);
+router.post('/create', createPaymentIntent);
 router.get('/confirm', confirmPayment);
 router.get('/',retreivePayment);
 router.get('/tokenPrice',getTokenPrice)

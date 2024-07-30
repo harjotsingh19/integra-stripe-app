@@ -7,10 +7,12 @@ export const handleCustomerPayload = async (payload) => {
   let emailId = payload.emailId;
   console.log("🚀 ~ handleCustomerPayload ~ emailId:", emailId)
   let customerId = payload.customerId;
-  console.log("🚀 ~ customerId:", customerId)
+  console.log("🚀 ~ handleCustomerPayload ~ customerId:", customerId)
+
 
   if (!customerId){
     if(!emailId){
+      console.log("inside customer not found");
     //   return response.HttpResponse(
     //     res,
     //     statusCode.badRequest,
@@ -26,7 +28,9 @@ export const handleCustomerPayload = async (payload) => {
     }
   );
     }else{
+      console.log("inside else of find custoner");
       customerId = await findCustomer(emailId);
+
       if(!customerId){
         return ({statusCode:statusCode.errorPage,
           responseStatus:responseStatus.failure,

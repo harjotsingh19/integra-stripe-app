@@ -16,4 +16,4 @@ COPY . .
 # Specify the command to run your Node.js application
 CMD [ "npm", "start" ]
 
-EXPOSE 4000
+EXPOSE 7000

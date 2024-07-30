@@ -15,7 +15,7 @@ services:
     working_dir: /usr/src/app
     # command: sh -c 'npm install && npm start'
     ports:
-      - 4000:4000
+      - 7000:7000
     # extra_hosts:
     # #   - peer1.hogan2.integra.com:127.0.0.1
     # #   - peer0.integra.integra.com:127.0.0.1

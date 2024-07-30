@@ -19,8 +19,8 @@ app.use('/auth',authRoutes)
 const startServer = async () => {
   await connectToDatabase(); // Connect to MongoDB
 
-  app.listen(5000, () => {
-    console.log('Server running on port 5000');
+  app.listen(7000, () => {
+    console.log('Server running on port 7000');
   });
 };
 

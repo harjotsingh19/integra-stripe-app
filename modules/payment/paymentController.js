@@ -18,9 +18,10 @@ export const attachPaymentMethod = async (req, res) => {
 
   try {
 
-    const data = req.query.data;
-    const jsonString = atob(data);
-    const payload = JSON.parse(jsonString);
+    // const data = req.query.data;
+    // const jsonString = atob(data);
+    // const payload = JSON.parse(jsonString);
+    const payload = req.body;
     console.log("🚀 ~ attachPaymentMethod ~ payload:", payload)
 
     const token = payload.token;
@@ -33,25 +34,30 @@ export const attachPaymentMethod = async (req, res) => {
         {}
       )
     }
-    // const email = payload.email;
+    const email = payload.emailId;
     let customerId = payload.customerId;
 
-    const result = await handleCustomerPayload(payload);
-    if (!result.data) {
-      console.log("🚀 ~ attachPaymentMethod ~ data:", result.data)
-
-      return response.HttpResponse(
-        res,
-        statusCode.errorPage,
-        responseStatus.failure,
-        messages.customerNotFound,
-        {},
-      );
+    if(!customerId){
+      const result = await handleCustomerPayload(payload);
+      console.log("🚀 ~ attachPaymentMethod ~ result:", result)
+      if (result && !result.data ) {
+        console.log("🚀 ~ attachPaymentMethod ~ data:", result.data)
+  
+        return response.HttpResponse(
+          res,
+          statusCode.errorPage,
+          responseStatus.failure,
+          messages.customerNotFound,
+          {},
+        );
+      }
+  
+      customerId = result.data;
+      console.log("🚀 ~ attachPaymentMethod ~ result.data:", result.data)
+      console.log("🚀 ~ attachPaymentMethod ~ customerId:", customerId)
     }
 
-    customerId = result.data;
-    console.log("🚀 ~ attachPaymentMethod ~ result.data:", result.data)
-    console.log("🚀 ~ attachPaymentMethod ~ customerId:", customerId)
+
 
     // if (!customerId){
     //   let customer = await User.findOne({ email: email });
@@ -98,10 +104,10 @@ export const attachPaymentMethod = async (req, res) => {
 
 export const listPaymentMethods = async (req, res) => {
   try {
-    const data = req.query.data;
+    // const data = req.query.data;
 
-    const jsonString = atob(data);
-    const payload = JSON.parse(jsonString);
+    // const jsonString = atob(data);
+    const payload = req.body;
 
 
     let customerId = payload.customerId;
@@ -159,15 +165,18 @@ export const listPaymentMethods = async (req, res) => {
 
 export const createPaymentIntent = async (req, res) => {
   try {
-    const data = req.query.data;
-    const jsonString = atob(data);
-    const payload = JSON.parse(jsonString);
+    // const data = req.query.data;
+    // const jsonString = atob(data);
+    // const payload = JSON.parse(jsonString);
+
+    const payload = req.body;
     console.log("🚀 ~ createPaymentIntent ~ payload:", payload)
 
 
     let customerId = payload.customerId;
     const emailId = payload.emailId;
-    let amount = payload.amount;
+    let amount = payload.tokenPrice;
+    console.log("🚀 ~ createPaymentIntent ~ amount:", amount)
     const amountPerToken = amount;
     const tokens = payload.numberOfTokens
     const integraPublicKeyId = payload.integraPublicKeyId
@@ -199,7 +208,8 @@ export const createPaymentIntent = async (req, res) => {
     console.log("🚀 ~ createPaymentIntent ~ amount:", typeof (amount))
 
 
-    const result = await handleCustomerPayload(payload);
+    if(!customerId){
+      const result = await handleCustomerPayload(payload);
     console.log("🚀 ~ createPaymentIntent ~ result:", result)
 
     if (result.data == "") {
@@ -218,6 +228,8 @@ export const createPaymentIntent = async (req, res) => {
     console.log("🚀 ~ createPaymentIntent ~ result.data:", result.data)
     console.log("🚀 ~ createPaymentIntent ~ customerId:", customerId)
 
+    }
+    
 
     // if (!customerId){
     //   let customer = await User.findOne({ email: email });

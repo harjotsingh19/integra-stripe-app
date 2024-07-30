@@ -11,11 +11,14 @@ const stripe = new Stripe(stripeSecretKey);  // Initialize Stripe with the named
 export const registerUser = async (req, res) => {
   try {
 
-    const data = req.query.data;
-    const jsonString = atob(data);
-    const userData = JSON.parse(jsonString);
-    console.log("🚀 ~ registerUser ~ userData:", userData)
-    const {emailId, name} = userData;
+    // const data = req.query.data;
+
+    const data = req.body;
+    // const jsonString = atob(data);
+    // const userData = JSON.parse(jsonString);
+    // console.log("🚀 ~ registerUser ~ userData:", userData)
+    // const {emailId, name} = data;
+    const {emailId} = data;
     if(!emailId){
       return response.HttpResponse(
         res,
@@ -44,10 +47,10 @@ export const registerUser = async (req, res) => {
     // Create a new Stripe customer
     const email = emailId;
     console.log("🚀 ~ registerUser ~ email:", email)
-    const customer = await stripe.customers.create({  email,name });
+    const customer = await stripe.customers.create({  email });
 
     const newUser = await User.create({
-      name : name,
+      // name : name,
       emailId: emailId,
       stripeCustomerId: customer.id,
   });
