@@ -11,9 +11,11 @@ const messages = {
     // B
     // C
     customerCreated: "customer created",
+    customernotCreated:"customer not created",
     customerFound:"customer already exists with this emailId",
     customerNotFound:"customer not found",
     cancelUnexecutedOrder: "Cancel unexecuted order to proceed",
+    customerNotFoundWithEmail: "provided customerId does not match the associated emailId",
     // D
     dataNotFound: 'Data not found.',
     dataFound: 'Data found successfully.',
@@ -81,6 +83,9 @@ const messages = {
     paymentFailed:"payment failed",
     paymentFound:"payment found",
     paymentNotFound:"payment not found",
+    priceIdNotFound:"priceId not valid",
+    plansFound:"subscription plans found",
+    plansNotFound:"no subscription plans found",
     // Q
     // R
     // S
@@ -88,11 +93,13 @@ const messages = {
     signUpRequiredData: "Register with email or mobile",
     signUpSuccess:
         'An OTP has been sent to your registered email address, please use given OTP to veify your email address.',
+    subscriptionCreated:"subscription created successfully",    
     // T
 
     tokenNotFound:"token for card details not found",
     tokensNumbersValid:"number of tokens should be a positive number",
-    tokenAdded:"tokens added successfully",
+    tokenAdded:"tokens added.",
+    tokenNotAdded:"failed to add tokens",
     tokenPriceFound:"token price found",
     tokenPriceNotFound:"token price not found",
     // U

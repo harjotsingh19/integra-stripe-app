@@ -26,6 +26,7 @@ router.get('/tokenPrice',getTokenPrice)
 
 
 // router.get('/checkout',paymentValidator.validateUserEmail(),paymentValidator.result, paymentSession)
+router.post('/checkout', paymentSession)
 
 
 // router.get('/complete', async (req, res) => {
@@ -44,7 +45,11 @@ router.get('/tokenPrice',getTokenPrice)
 // })
 
 
-// router.get('/verify', verifyPayment)
+router.get('/verify', verifyPayment)
+
+
+router.post('/crea')
+
 
 
 export default router;
