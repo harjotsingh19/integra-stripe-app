@@ -30,6 +30,7 @@ const productSchema = new Schema({
     enum: ['month', 'year'],
     required: true,
   },
+  numberOfTokens: { type: Number, required: true } ,
 }, { timestamps: true }); // Adds createdAt and updatedAt fields automatically
 
 const SubsciptionPlan = mongoose.model('SubsciptionPlan', productSchema);

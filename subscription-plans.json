@@ -3,43 +3,50 @@
       "name": "Personal",
       "description": "Access to Personal Plan of 174 tokens with monthly billing option",
       "period": "month",
-      "amount": 25
+      "amount": 25,
+      "numberOfTokens": 174
     },
     {
       "name": "Personal",
       "description": "Access to Personal Plan of 174 tokens with annual billing option",
       "period": "year",
-      "amount": 15
+      "amount": 15,
+      "numberOfTokens": 174
     },
     {
       "name": "Standard",
       "description": "Access to Standard Plan of 600 tokens with monthly billing option",
       "period": "month",
-      "amount": 60
+      "amount": 60,
+      "numberOfTokens": 600
     },
     {
       "name": "Standard",
       "description": "Access to Standard Plan of 600 tokens with annual billing option",
       "period": "year",
-      "amount": 40
+      "amount": 40,
+      "numberOfTokens": 600
     },
     {
       "name": "Pro",
       "description": "Access to Pro Plan of 1500 tokens with monthly billing option",
       "period": "month",
-      "amount": 100
+      "amount": 100,
+      "numberOfTokens": 1500
     },
     {
       "name": "Pro",
       "description": "Access to Pro Plan of 1500 tokens with annual billing option",
       "period": "year",
-      "amount": 75
+      "amount": 75,
+      "numberOfTokens": 1500
     },
     {
       "name": "Enterprise",
       "description": "Access to Enterprise Plan with custom billing options",
       "period": "month",
-      "amount": 0
+      "amount": 0,
+      "numberOfTokens": 0
     }
   ]
   

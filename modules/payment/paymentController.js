@@ -818,53 +818,53 @@ export const verifyPayment = async (req, res) => {
   try {
     // Retrieve the session details from Stripe
     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
-    console.log("🚀 ~ verifyPayment ~ stripeSession:", stripeSession);
+    // console.log("🚀 ~ verifyPayment ~ stripeSession:", stripeSession);
 
     // Verify the payment status
     if (stripeSession.payment_status === 'paid') {
       // Create a new CheckoutSession document
-      const checkoutSession = new CheckoutSession({
-        id: stripeSession.id,
-        object: stripeSession.object,
-        amount_subtotal: stripeSession.amount_subtotal,
-        amount_total: stripeSession.amount_total,
-        created: new Date(stripeSession.created * 1000), // Convert from timestamp to Date
-        currency: stripeSession.currency,
-        customer: stripeSession.customer,
-        customer_creation: stripeSession.customer_creation,
-        customer_details: stripeSession.customer_details,
-        expires_at: new Date(stripeSession.expires_at * 1000), // Convert from timestamp to Date
-        livemode: stripeSession.livemode,
-        mode: stripeSession.mode,
-        payment_method_options: stripeSession.payment_method_options,
-        payment_method_types: stripeSession.payment_method_types,
-        payment_status: stripeSession.payment_status,
-        status: stripeSession.status,
-        success_url: stripeSession.success_url,
-        metadata: stripeSession.metadata, // Save metadata as a Map
-        invoice: stripeSession.invoice, // Store invoice ID
-        invoice_creation: {
-            enabled: stripeSession.invoice_creation ? true : false,
-            invoice_data: stripeSession.invoice_creation ? {
-                account_tax_ids: stripeSession.invoice_creation.invoice_data.account_tax_ids,
-                custom_fields: stripeSession.invoice_creation.invoice_data.custom_fields,
-                description: stripeSession.invoice_creation.invoice_data.description,
-                footer: stripeSession.invoice_creation.invoice_data.footer,
-                issuer: stripeSession.invoice_creation.invoice_data.issuer,
-                metadata: stripeSession.invoice_creation.invoice_data.metadata,
-                rendering_options: stripeSession.invoice_creation.invoice_data.rendering_options
-            } : {}
-        }
-    });
+    //   const checkoutSession = new CheckoutSession({
+    //     id: stripeSession.id,
+    //     object: stripeSession.object,
+    //     amount_subtotal: stripeSession.amount_subtotal,
+    //     amount_total: stripeSession.amount_total,
+    //     created: new Date(stripeSession.created * 1000), // Convert from timestamp to Date
+    //     currency: stripeSession.currency,
+    //     customer: stripeSession.customer,
+    //     customer_creation: stripeSession.customer_creation,
+    //     customer_details: stripeSession.customer_details,
+    //     expires_at: new Date(stripeSession.expires_at * 1000), // Convert from timestamp to Date
+    //     livemode: stripeSession.livemode,
+    //     mode: stripeSession.mode,
+    //     payment_method_options: stripeSession.payment_method_options,
+    //     payment_method_types: stripeSession.payment_method_types,
+    //     payment_status: stripeSession.payment_status,
+    //     status: stripeSession.status,
+    //     success_url: stripeSession.success_url,
+    //     metadata: stripeSession.metadata, // Save metadata as a Map
+    //     invoice: stripeSession.invoice, // Store invoice ID
+    //     invoice_creation: {
+    //         enabled: stripeSession.invoice_creation ? true : false,
+    //         invoice_data: stripeSession.invoice_creation ? {
+    //             account_tax_ids: stripeSession.invoice_creation.invoice_data.account_tax_ids,
+    //             custom_fields: stripeSession.invoice_creation.invoice_data.custom_fields,
+    //             description: stripeSession.invoice_creation.invoice_data.description,
+    //             footer: stripeSession.invoice_creation.invoice_data.footer,
+    //             issuer: stripeSession.invoice_creation.invoice_data.issuer,
+    //             metadata: stripeSession.invoice_creation.invoice_data.metadata,
+    //             rendering_options: stripeSession.invoice_creation.invoice_data.rendering_options
+    //         } : {}
+    //     }
+    // });
     
-    // Save the document to MongoDB
-    await checkoutSession.save();
+    // // Save the document to MongoDB
+    // await checkoutSession.save();
       return response.HttpResponse(
         res,
         statusCode.accepted,
         responseStatus.success,
         messages.paymentSuccess,
-        { stripeSession: stripeSession, success: true }
+        { success: true }
       );
 
       // res.json({ success: true });
@@ -875,7 +875,7 @@ export const verifyPayment = async (req, res) => {
         statusCode.badRequest,
         responseStatus.failure,
         messages.paymentfailed,
-        { stripeSession: stripeSession, success: false },
+        { success: false },
       );
     }
   } catch (error) {
