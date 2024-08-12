@@ -5,6 +5,6 @@ import { handleStripeWebhook } from './webhookController.js'; // Adjust the path
 const router = express.Router();
 
 // Use body-parser raw middleware for Stripe webhook
-router.post('/stripe', handleStripeWebhook);
+router.post('/', handleStripeWebhook);
 
 export default router;

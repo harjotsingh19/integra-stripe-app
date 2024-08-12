@@ -1,0 +1,11 @@
+PORT=7000
+STRIPE_SECRET_KEY=sk_test_51Pfek5B49VjnIsx46mP56xDc3YScCJc7rTH1S0O82oLH69quXzpbHSdbKAig6BRm8rlLzhq3JWLlNzsBDXbargDc00xWij4wdq
+STRIPE_WEBHOOK_SECRET=whsec_kIhZ4rHd10Xdwwg4iVeFz8tKDIDA3PKk
+MONGO_URI=mongodb://localhost:27017/integradb
+# CustomerId=cus_QXO1gSHT90Kp8B
+FRONT_END_BASE_URL=http://localhost:7003
+# BLOCKCHAIN_URL=https://renew-sdk.loca.lt
+BLOCKCHAIN_URL=https://testnet.integraledger.com
+AUCTORITAS_USERNAME=admin
+AUCTORITAS_PASSWORD=adminpw
+

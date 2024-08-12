@@ -26,23 +26,22 @@ export const handleStripeWebhook = async (req, res) => {
     event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET);
     const eventId = event.id;
 
-    // let eventObject, metadata, updatedPayment, integraPublicKeyId, tokens, isTokenCredited;
 
     console.log("TCL: handleStripeWebhook -> event.type", event.type)
     switch (event.type) {
 
-      // case 'invoice.payment_succeeded': {
-      //   console.log("invoice succeeded",event.data.object);
-      //   break;
-      // }
-
-
       case 'customer.subscription.updated': {
         console.log("inside subscription updated");
+
+        const dbConnection = await checkDatabaseConnection();
+        console.log("🚀 ~ handleStripeWebhook ~ dbConnection:", dbConnection)
+        if (!dbConnection.status == responseStatus.success){
+          console.log("🚀 ~ handleStripeWebhook ~ db connection failure",dbConnection.message)
+          return res.status(statusCode.serverError).json({ status: responseStatus.failure, message: dbConnection.message });
+        }
+        
         console.log("event data");
         console.log(event.data.object);
-
-
 
         const updatedSubscription = event.data.object;
         const subscriptionId = updatedSubscription.id;
@@ -54,7 +53,7 @@ export const handleStripeWebhook = async (req, res) => {
         // Check if the subscription is for first time
 
         const previousRenewal = await SubscriptionRenewal.findOne({ subscriptionId }).sort({ renewalDate: -1 });
-  
+
         console.log("🚀 ~ handleStripeWebhook ~ previousRenewal:", previousRenewal)
 
 
@@ -66,26 +65,12 @@ export const handleStripeWebhook = async (req, res) => {
           return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.firstTimeSubscription });
         }
 
-        // console.log('previous renewal is not empty');
-        // console.log("");
-        // console.log("🚀 ~ handleStripeWebhook ~ updatedSubscription.current_period_start:", updatedSubscription.current_period_start)
-        // console.log("");
-
-        // console.log("🚀 ~ handleStripeWebhook ~ previousRenewal.subscriptionDetails.currentPeriodStart:", previousRenewal.subscriptionDetails.currentPeriodStart)
-
-        // console.log("");
-
-        // console.log("🚀 ~ handleStripeWebhook ~ updatedSubscription.current_period_end:", updatedSubscription.current_period_end)
-
-        // console.log("");
-
-        // console.log("🚀 ~ handleStripeWebhook ~ previousRenewal.subscriptionDetails.currentPeriodEnd:", previousRenewal.subscriptionDetails.currentPeriodEnd)
 
         console.log("");
 
         console.log("previous renewal date", previousRenewal.renewalDate);
         if (previousRenewal.subscriptionType == 'first_time') {
-          console.log("insoide subscription checl first time or renew");
+          console.log("inside subscription check first time or renew");
 
           // check if first time subscription is trying to get updated again
           if (updatedSubscription.current_period_start == previousRenewal.subscriptionDetails.currentPeriodStart && updatedSubscription.current_period_end == previousRenewal.subscriptionDetails.currentPeriodEnd
@@ -98,18 +83,9 @@ export const handleStripeWebhook = async (req, res) => {
 
           console.log("subscription is renewing");
 
-          // const timeNow = Math.floor(Date.now() / 1000)
-          // if (previousRenewal?.integraPublicKeyData?.lastTokensAddedTime > 0) {
-          //   console.log(`timenow condition check result 1:- ${messages.tokensAlreadyAdded}`);
-          //   return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded })
-          // }
-
         } else {
           console.log("subscription is renewing, it is also renewed before this.");
         }
-
-
-
 
         console.log("");
         console.log("🚀 ~ handleStripeWebhook ~ currentPeriodStart:", updatedSubscription.current_period_start)
@@ -118,25 +94,6 @@ export const handleStripeWebhook = async (req, res) => {
 
         const currentPeriodEnd = updatedSubscription.current_period_end;
         console.log("🚀 ~ handleStripeWebhook ~ currentPeriodEnd:", currentPeriodEnd);
-
-        // console.log("previous rrnewa; date 222222222", new Date(previousRenewal.renewalDate * 1000));
-
-        // console.log("current date 222222222", new Date(currentPeriodEnd * 1000));
-
-
-
-
-        // if (previousRenewal && previousRenewal.renewalDate <= currentPeriodEnd) {
-        //   console.log("previous rrnewa; date 3333");
-
-        //   console.log("previous rrnewa; date 3333", previousRenewal.renewalDate);
-        //   console.log("🚀 ~ handleStripeWebhook ~ previousRenewal.renewalDate:", previousRenewal.renewalDate)
-        //   // If the renewalDate of the latest renewal record is greater than or equal to currentPeriodEnd, it's not a renewal
-        //   console.log('Not a renewal or already processed');
-        //   return res.status(200).json({ status: 'success', message: 'Not a renewal or its a first time subscription' });
-        // }else{
-        //   console.log("greater ");
-        // }
 
         // Check if this renewal has already been processed
         const existingRenewal = await SubscriptionRenewal.findOne({ renewalId });
@@ -158,47 +115,16 @@ export const handleStripeWebhook = async (req, res) => {
         let integraPublicKeyId = sessionData.metadata.IntegraId;
 
         if (existingRenewal && existingRenewal.tokensCredited) {
-          // if(existingRenewal?.integraPublicKeyData){
-          //   console.log("🚀 ~ handleStripeWebhook ~ existingRenewal:", existingRenewal.integraPublicKeyData)
-          // }
+          
           console.log("🚀 ~ handleStripeWebhook ~ existingRenewal:", existingRenewal?.integraPublicKeyData)
 
-
-          // const responseGetPublicKey = await axios.get(`${Blockchain_url}/integraKey/${integraPublicKeyId}`)
-
-          // console.log("TCL: handleStripeWebhook  get integra public key data-> responseGetPublicKey", responseGetPublicKey?.data)
-
-          // const blockchainTokenAddedTime = responseGetPublicKey?.data?.data?.lastTokensAddedTime ?? 0;
-
-          // console.log("🚀 ~ handleStripeWebhook ~ blockchainTokenAddedTime:", blockchainTokenAddedTime)
-
-          // console.log("handleStripeWebhook from blockchain subscriptionTokenAddedTime ");
-          // console.log(existingRenewal?.integraPublicKeyData?.lastTokensAddedTime);
-
-          // const subscriptionTokenAddedTime = existingRenewal?.integraPublicKeyData?.lastTokensAddedTime ?? 0;
-
-
-          // console.log("🚀 ~ handleStripeWebhook ~ subscriptionTokenAddedTime: user added", subscriptionTokenAddedTime)
-
-          // if (blockchainTokenAddedTime > 0) {
-          //   console.log("inside auctroritas if condition");
-
-          //   if (subscriptionTokenAddedTime == blockchainTokenAddedTime) {
-          //     console.log("🚀 ~ handleStripeWebhook ~ responseGetPublicKey.data.lastTokensAddedTime:", blockchainTokenAddedTime)
-
-          //     console.log("blockchain token added time and subscription token added time are same");
-          //     return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded });
-          //   }
-
-          // }
-
-          const timeNow = Math.floor(Date.now() / 1000)
-          if (existingRenewal?.integraPublicKeyData?.lastTokensAddedTime < timeNow) {
+          // const timeNow = Math.floor(Date.now() / 1000)
+          if (existingRenewal?.integraPublicKeyData?.lastTokensAddedTime > 0) {
             console.log(`lastTokensAddedTime is positive greater than 0 :- ${messages.tokensAlreadyAdded}`);
             return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded })
           }
 
-          console.log('Renewal already processed');
+          console.log("Renewal already completed");
           return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded });
         }
 
@@ -221,7 +147,7 @@ export const handleStripeWebhook = async (req, res) => {
             });
           }
 
-          const tokens = subscriptionPlan.numberOfTokens || 0; // Use default if not specified
+          const tokens = subscriptionPlan.numberOfTokens || 0; 
           console.log("🚀 ~ numbers of tokens to add :", tokens)
           if (!Number.isInteger(tokens) || tokens <= 0) {
 
@@ -234,10 +160,8 @@ export const handleStripeWebhook = async (req, res) => {
             );
           }
 
-          // Create a new renewal record
-          // const newRenewal = await SubscriptionRenewal.create({
+         
           const newRenewal = await SubscriptionRenewal.findOneAndUpdate({ renewalId: renewalId }, {
-            // renewalId: renewalId,
             $set: {
               subscriptionId: subscriptionId,
               renewalDate: Math.floor(Date.now() / 1000),
@@ -324,11 +248,11 @@ export const handleStripeWebhook = async (req, res) => {
               );
 
             }
-          }else{
+          } else {
             console.log(`tokens already credited to ${integraPublicKeyId} in this renew event :- ${renewalId}`);
           }
-          
-        }else{
+
+        } else {
           console.log("invoice paid status is false , so payment is still in pending state , tokens will be added later");
           return res.status(statusCode.errorPage).json({
             responseStatus: responseStatus.failure,
@@ -336,7 +260,7 @@ export const handleStripeWebhook = async (req, res) => {
           });
         }
 
-        // res.status(200).json({ status: 'success', message: 'Subscription renewal processed' });
+        
         break;
       }
 
@@ -344,6 +268,9 @@ export const handleStripeWebhook = async (req, res) => {
         const session = event.data.object;
         // console.log("TCL: handleStripeWebhook -> session", session)
         console.log("inside Session");
+
+
+        await checkDatabaseConnection();
         console.log("")
         console.log("TCL: handleStripeWebhook -> event.id", event.id)
         console.log("");
@@ -366,13 +293,13 @@ export const handleStripeWebhook = async (req, res) => {
         console.log('Session metadata:', metadata);
 
         console.log("");
-        // console.log("subscription data ", invoice.subscription_details);
+     
 
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription)
         console.log("");
-        // console.log("🚀 ~ handleStripeWebhook ~ subscription:", subscription)
+      
         console.log("");
-        // console.log("subscription data ", subscription.items.data);
+       
 
         console.log("");
 
@@ -398,7 +325,7 @@ export const handleStripeWebhook = async (req, res) => {
           }
 
 
-          console.log("🚀 ~ check 11111111111111111111")
+   
           integraPublicKeyId = sessionData.metadata.IntegraId;
           console.log("");
           console.log("TCL: handleStripeWebhook -> integraPublicKeyId", integraPublicKeyId)
@@ -407,38 +334,12 @@ export const handleStripeWebhook = async (req, res) => {
           console.log("istokencredited :- ", isTokenCredited);
           console.log("");
 
-          console.log("🚀 ~ check 22222")
+
 
 
 
           if (!isTokenCredited) {
 
-            // const responseGetPublicKey = await axios.get(`${Blockchain_url}/integraKey/${integraPublicKeyId}`);
-
-            // console.log("TCL: handleStripeWebhook  get integra public key data-> responseGetPublicKey", responseGetPublicKey.data)
-
-            // const blockchainTokenAddedTime = responseGetPublicKey.data.data?.lastTokensAddedTime ?? 0;
-
-            // console.log("🚀 ~ handleStripeWebhook ~ blockchainTokenAddedTime:", blockchainTokenAddedTime)
-
-            // console.log("handleStripeWebhook from blockchain sessionTokenAddedTime ");
-            // console.log(sessionData.integraPublicKeyData?.lastTokensAddedTime);
-
-            // const sessionTokenAddedTime = sessionData.integraPublicKeyData?.lastTokensAddedTime || 0;
-
-
-            // console.log("🚀 ~ handleStripeWebhook ~ sessionTokenAddedTime: user added", sessionTokenAddedTime)
-
-            // if (blockchainTokenAddedTime > 0) {
-            //   console.log("inside auctroritas if condition");
-
-            //   if (sessionTokenAddedTime == blockchainTokenAddedTime) {
-            //     console.log("🚀 ~ handleStripeWebhook ~ responseGetPublicKey.data.lastTokensAddedTime:", blockchainTokenAddedTime)
-            //     console.log(`session token added time and time token added in blockchain are same ,${messages.tokensAlreadyAdded}`);
-            //     return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded });
-            //   }
-
-            // }
 
             // const timeNow = Math.floor(Date.now() / 1000)
             if (sessionData?.integraPublicKeyData?.lastTokensAddedTime > 0) {
@@ -541,11 +442,10 @@ export const handleStripeWebhook = async (req, res) => {
 
             console.log("");
 
-            console.log("🚀 ~ check 3333333333333:")
+
             const renewalId = event.id;
             const newRenewal = await SubscriptionRenewal.findOneAndUpdate({ renewalId: renewalId }, {
               $set: {
-                // renewalId: renewalId,
                 subscriptionId: invoice.subscription,
                 renewalDate: Math.floor(Date.now() / 1000),
                 sessionId: sessionId,
@@ -595,33 +495,7 @@ export const handleStripeWebhook = async (req, res) => {
               },
             }, { upsert: true, 'new': true })
 
-            // if (!isTokenCredited) {
-            // const responseGetPublicKey = await axios.get(`${Blockchain_url}/integraKey/${integraPublicKeyId}`);
 
-            // console.log("TCL: handleStripeWebhook  get integra public key data-> responseGetPublicKey", responseGetPublicKey.data)
-
-            // const blockchainTokenAddedTime = responseGetPublicKey.data.data?.lastTokensAddedTime ?? 0;
-
-            // console.log("🚀 ~ handleStripeWebhook ~ blockchainTokenAddedTime:", blockchainTokenAddedTime)
-
-            // console.log("handleStripeWebhook from blockchain sessionTokenAddedTime ");
-            // console.log(sessionData.integraPublicKeyData?.lastTokensAddedTime);
-
-            // const sessionTokenAddedTime = sessionData.integraPublicKeyData?.lastTokensAddedTime || 0;
-
-
-            // console.log("🚀 ~ handleStripeWebhook ~ sessionTokenAddedTime: user added", sessionTokenAddedTime)
-
-            // if (blockchainTokenAddedTime > 0) {
-            //   console.log("inside auctroritas if condition");
-
-            //   if (sessionTokenAddedTime == blockchainTokenAddedTime) {
-            //     console.log("🚀 ~ handleStripeWebhook ~ responseGetPublicKey.data.lastTokensAddedTime:", blockchainTokenAddedTime)
-
-            //     return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded });
-            //   }
-
-            // }
 
             console.log("inside credite tokens");
 
@@ -645,10 +519,8 @@ export const handleStripeWebhook = async (req, res) => {
                 { new: true }
               );
 
-
-
               const updatedTokenInfo = await subscriptionSession.findOneAndUpdate(
-                { sessionId: sessionId }, // Query
+                { sessionId: sessionId }, 
                 {
                   $set: {
                     integraPublicKeyData: tokenInfo.data
@@ -669,7 +541,7 @@ export const handleStripeWebhook = async (req, res) => {
                     integraPublicKeyData: tokenInfo.data,
                   }
                 },
-                
+
                 { new: true }
               );
               console.log("");
@@ -703,7 +575,7 @@ export const handleStripeWebhook = async (req, res) => {
             console.log("");
             console.log("tokens already added in blockchain", integraPublicKeyId);
           }
-        }else{
+        } else {
           console.log("invoice paid status is false , so payment is still in pending state , tokens will be added later");
           return res.status(statusCode.errorPage).json({
             responseStatus: responseStatus.failure,
@@ -730,16 +602,6 @@ export const handleStripeWebhook = async (req, res) => {
       message: `Webhook Error found: ${err.message}`,
     });
   }
-
-
-
-
-
-
-
-
-
-
 
 
   async function creditTokens(integraPublicKeyId, tokens) {
@@ -811,6 +673,18 @@ export const handleStripeWebhook = async (req, res) => {
 
   }
 
+  async function checkDatabaseConnection() {
+    try {
+      // Assuming `subscriptionSession` is your MongoDB collection
+      // Run a simple command or query to check connection
+      await subscriptionSession.findOne({});
+      await SubscriptionRenewal.findOne({});
+      return { statusCode: statusCode.ok, status: responseStatus.success, message: "Connected to database", data: {} }
+    } catch (error) {
+      console.error('Database connection failed:', error);
+       return { statusCode: statusCode.serverError, status: responseStatus.failure, message: error.message, data: {} }
+    }
+  }
 
 
 
