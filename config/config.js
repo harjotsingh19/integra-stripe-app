@@ -14,3 +14,4 @@ export const ACCESS_TOKEN_SECRET_KEY = process.env.ACCESS_TOKEN_SECRET;
 export const REFRESH_TOKEN_SECRET_KEY = process.env.REFRESH_TOKEN_SECRET;
 export const TOKEN_PRICE=process.env.TOKEN_PRICE
 export const STRIPE_WEBHOOK_SECRET=process.env.STRIPE_WEBHOOK_SECRET
+export const FRONT_END_BASE_URL=process.env.FRONT_END_BASE_URL

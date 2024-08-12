@@ -1,754 +1,13 @@
 
-import Stripe from 'stripe';  // Correctly import Stripe
-import { stripeSecretKey, Blockchain_url, AUCTORITAS_USERNAME, AUCTORITAS_PASSWORD, TOKEN_PRICE } from '../../config/config.js';  // Import named export
-import User from '../../models/userModel.js';
-import PaymentIntent from '../../models/paymentIntentModel.js';
+import Stripe from 'stripe';  
+import { stripeSecretKey,FRONT_END_BASE_URL } from '../../config/config.js'; 
 import response from "../../responseHandler/response.js";
 import { messages, responseStatus, statusCode } from "../../core/constants/constant.js";
-import { findCustomer, handleCustomerPayload, verifyCustomer } from "../../utils/common.js";
 
-import CheckoutSession from '../../models/sessionModel.js'
 
-import axios from 'axios';
+import subscriptionSession from '../../models/subscriptionSession.js'
 
-
-const stripe = new Stripe(stripeSecretKey);  // Initialize Stripe with the named export
-
-export const attachPaymentMethod = async (req, res) => {
-
-  try {
-
-    // const data = req.query.data;
-    // const jsonString = atob(data);
-    // const payload = JSON.parse(jsonString);
-    const payload = req.body;
-    console.log("🚀 ~ attachPaymentMethod ~ payload:", payload)
-
-    const token = payload.token;
-    if (!token) {
-      return response.HttpResponse(
-        res,
-        statusCode.badRequest,
-        responseStatus.failure,
-        messages.tokenNotFound,
-        {}
-      )
-    }
-    const emailId = payload.emailId;
-    let customerId = payload.customerId;
-
-    if (!customerId) {
-      const result = await handleCustomerPayload(payload);
-      console.log("🚀 ~ attachPaymentMethod ~ result:", result)
-      if (result && !result.data) {
-        console.log("🚀 ~ attachPaymentMethod ~ data:", result.data)
-
-        return response.HttpResponse(
-          res,
-          statusCode.errorPage,
-          responseStatus.failure,
-          messages.customerNotFound,
-          {},
-        );
-      }
-
-      customerId = result.data;
-      console.log("🚀 ~ attachPaymentMethod ~ result.data:", result.data)
-      console.log("🚀 ~ attachPaymentMethod ~ customerId:", customerId)
-    } else if (customerId) {
-      let isCustomerId = await verifyCustomer(payload);
-      console.log("🚀 ~ attachPaymentMethod ~ isCustomerId:", isCustomerId)
-
-      if (isCustomerId && isCustomerId == customerId) {
-        console.log("🚀 ~ attachPaymentMethod ~ token:", token)
-        console.log("🚀 ~ attachPaymentMethod ~ customerId:", customerId)
-
-        const method = await stripe.paymentMethods.create({
-          type: messages.paymentType,
-          card: { token }
-        })
-        console.log("🚀 ~ attachPaymentMethod ~ method:", method)
-
-
-        await stripe.paymentMethods.attach(method.id, {
-          customer: customerId,
-        });
-        await stripe.customers.update(customerId, {
-          invoice_settings: {
-            default_payment_method: method.id,
-          },
-        });
-
-
-        return response.HttpResponse(
-          res,
-          statusCode.created,
-          responseStatus.success,
-          messages.paymentAttached,
-          { paymentMethod: method },
-        );
-      }
-      return response.HttpResponse(
-        res,
-        statusCode.badRequest,
-        responseStatus.failure,
-        messages.customerNotFoundWithEmail,
-        {}
-      )
-    } else {
-      return response.HttpResponse(
-        res,
-        statusCode.serverError,
-        responseStatus.failure,
-        err.message,
-        {}
-      )
-    }
-
-
-
-    // if (!customerId){
-    //   let customer = await User.findOne({ email: email });
-    //   customerId = customer.stripeCustomerId;
-    // }
-
-  } catch (err) {
-    console.error(err);
-    return response.HttpResponse(
-      res,
-      statusCode.serverError,
-      responseStatus.failure,
-      err.message,
-      {}
-    )
-  }
-};
-
-export const listPaymentMethods = async (req, res) => {
-  try {
-    // const data = req.query.data;
-
-    // const jsonString = atob(data);
-    const payload = req.body;
-
-
-    let customerId = payload.customerId;
-    // const email = payload.email;
-
-
-    const result = await handleCustomerPayload(payload);
-
-    if (!result.data) {
-      console.log("🚀 ~ listPaymentMethods ~ data:", result.data)
-
-      return response.HttpResponse(
-        res,
-        statusCode.errorPage,
-        responseStatus.failure,
-        messages.customerNotFound,
-        {},
-      );
-    }
-
-
-    customerId = result.data;
-    console.log("🚀 ~ listPaymentMethods ~ result.data:", result.data)
-    console.log("🚀 ~ listPaymentMethods ~ customerId:", customerId)
-    // if (!customerId){
-    //   let customer = await User.findOne({ email: email });
-    //   customerId = customer.stripeCustomerId;
-    // }
-    // console.log("🚀 ~ attachPaymentMethod ~ token:", token)
-    console.log("🚀 ~ listPaymentMethods ~ customerId:", customerId)
-
-
-    const paymentMethods = await stripe.customers.listPaymentMethods(customerId, { type: messages.paymentType });
-    console.log("🚀 ~ listPaymentMethods ~ paymentMethods:", paymentMethods)
-    return response.HttpResponse(
-      res,
-      statusCode.created,
-      responseStatus.success,
-      messages.paymentMethodFound,
-      { paymentMethods: paymentMethods },
-    );
-
-  } catch (err) {
-    console.error(err);
-    return response.HttpResponse(
-      res,
-      statusCode.serverError,
-      responseStatus.failure,
-      err.message,
-      {}
-    )
-  }
-};
-
-
-export const createPaymentIntent = async (req, res) => {
-  try {
-    // const data = req.query.data;
-    // const jsonString = atob(data);
-    // const payload = JSON.parse(jsonString);
-
-    const payload = req.body;
-    console.log("🚀 ~ createPaymentIntent ~ payload:", payload)
-
-
-    let customerId = payload.customerId;
-    const emailId = payload.emailId;
-    let amount = payload.tokenPrice;
-    console.log("🚀 ~ createPaymentIntent ~ amount:", amount)
-    const amountPerToken = amount;
-    const tokens = payload.numberOfTokens
-    const integraPublicKeyId = payload.integraPublicKeyId
-
-    if (typeof amount !== 'number' || amount <= 0) {
-      return response.HttpResponse(
-        res,
-        statusCode.badRequest,
-        responseStatus.failure,
-        messages.amountNotFound,
-        {},
-      );
-    }
-
-    // Validate tokens
-    if (!Number.isInteger(tokens) || tokens <= 0) {
-      return response.HttpResponse(
-        res,
-        statusCode.badRequest,
-        responseStatus.failure,
-        messages.tokensNumbersValid,
-        {},
-      );
-    }
-
-
-    amount = amount * tokens;
-    console.log("🚀 ~ createPaymentIntent ~ amount:", amount)
-    console.log("🚀 ~ createPaymentIntent ~ amount:", typeof (amount))
-
-
-    if (!customerId) {
-      const result = await handleCustomerPayload(payload);
-      console.log("🚀 ~ createPaymentIntent ~ result:", result)
-
-      if (result && !result.data) {
-        console.log("🚀 ~ attachPaymentMethod ~ data:", result.data)
-
-        return response.HttpResponse(
-          res,
-          statusCode.errorPage,
-          responseStatus.failure,
-          messages.customerNotFound,
-          {},
-        );
-      }
-
-      customerId = result.data;
-      console.log("🚀 ~ createPaymentIntent ~ result.data:", result.data)
-      console.log("🚀 ~ createPaymentIntent ~ customerId:", customerId)
-
-    }else if(customerId){
-      let isCustomerId = await verifyCustomer(payload);
-      console.log("🚀 ~ createPaymentIntent ~ isCustomerId:", isCustomerId)
-      if (isCustomerId && isCustomerId == customerId) {
-  
-        const paymentMethod = payload.paymentMethodId
-  
-        if (!paymentMethod) {
-          return response.HttpResponse(
-            res,
-            statusCode.errorPage,
-            responseStatus.failure,
-            messages.paymentMethodNotAttach,
-            {},
-          );
-        }
-  
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: amount * 100,
-          currency: 'usd',
-          customer: customerId,
-          confirm: true,
-          payment_method: paymentMethod,
-          // confirmation_method: 'automatic',
-          automatic_payment_methods: {
-            enabled: true,  // Automatically handle supported payment methods
-            allow_redirects: 'never',  // Avoid redirects
-          },
-          description: `${tokens} Tokens`,
-        });
-  
-        let message, returnData;
-        // Check the status of the payment intent
-        switch (paymentIntent.status) {
-          case 'succeeded': {
-            const unixTimestamp = paymentIntent.created;
-            const date = new Date(unixTimestamp * 1000);
-  
-            // Store paymentIntent details in the database
-            const newPaymentIntent = new PaymentIntent({
-              paymentIntentId: paymentIntent.id,
-              customerId: customerId,
-              emailId: emailId,
-              amount: amount,
-              paymentDate: date,
-              currency: paymentIntent.currency,
-              status: paymentIntent.status,
-              description: paymentIntent.description,
-              integraPublicKeyId: integraPublicKeyId,
-              numberOfTokens: tokens,
-              amountPerToken: amountPerToken,
-            });
-  
-            await newPaymentIntent.save();
-  
-            // message = messages.paymentSuccess
-  
-  
-            let response = await axios.post(`${Blockchain_url}/auctoritas`, { username: AUCTORITAS_USERNAME, password: AUCTORITAS_PASSWORD });
-  
-            console.log("🚀 ~ createPaymentIntent ~ response:", response.data)
-            let auth_token;
-            if (response && response.status == '200' && response.data.message == "success" && response.data.token) {
-              auth_token = response.data.token
-            }
-  
-  
-            if (auth_token) {
-              const AddTokenResponse = await axios.post(`${Blockchain_url}/addToken`,
-                {
-                  IntegraID: integraPublicKeyId,
-                  Amount: tokens,
-                  Issue: false
-                },
-                {
-                  headers: {
-                    'Authorization': `Bearer ${auth_token}`
-                  }
-                }
-              );
-  
-              console.log("🚀 ~ addToken response:", AddTokenResponse.data);
-              // message = messages.paymentSuccess+" "+ "and" messages.tokenAdded
-              message = `${messages.paymentSuccess} & ${messages.tokenAdded}`
-              returnData = {
-                paymentIntent,
-                addedTokenData: AddTokenResponse.data
-              }
-  
-              console.log("🚀 ~ createPaymentIntent ~ returnData:", returnData)
-  
-            } else {
-              message = `${messages.paymentSuccess} ,but ${messages.tokenNotAdded}.`
-            }
-            break;
-  
-          }
-          case 'requires_action':
-            message = messages.paymentRequiredAction
-            break;
-          case 'requires_payment_method':
-            message = messages.paymentMethodNotAttach
-            break;
-          case 'requires_confirmation':
-            message = messages.paymentReadyToConfirmed
-            break;
-          case 'requires_capture':
-            return response.HttpResponse(
-              res,
-              statusCode.ok,
-              responseStatus.success,
-              messages.paymentFurtherAction + `:-${paymentIntent.status}`,
-              paymentIntent,
-            );
-          case 'canceled':
-            return response.HttpResponse(
-              res,
-              statusCode.ok,
-              responseStatus.success,
-              messages.paymentCanceled,
-              paymentIntent,
-            );
-  
-          case 'processing':
-            message = messages.paymentProcessing
-            break;
-  
-          default:
-            return response.HttpResponse(
-              res,
-              statusCode.badRequest,
-              responseStatus.failure,
-              messages.paymentFailed + `:-${paymentIntent.status}`,
-              paymentIntent,
-            );
-        }
-  
-        if (returnData) {
-          console.log("🚀 ~ createPaymentIntent ~ returnData:", "inside return data ")
-  
-          return response.HttpResponse(
-            res,
-            statusCode.ok,
-            responseStatus.success,
-            message,
-            returnData,
-          );
-        }
-        console.log("🚀 ~ createPaymentIntent ~ returnData:", "outside return data ")
-        return response.HttpResponse(
-          res,
-          statusCode.ok,
-          responseStatus.success,
-          message,
-          paymentIntent,
-        );
-      } else {
-        return response.HttpResponse(
-          res,
-          statusCode.badRequest,
-          responseStatus.failure,
-          messages.customerNotFoundWithEmail,
-          {}
-        )
-      }
-    }else{
-      return response.HttpResponse(
-        res,
-        statusCode.serverError,
-        responseStatus.failure,
-        err.message,
-        {}
-      )
-    }
-
-
-   
-    // if (!customerId){
-    //   let customer = await User.findOne({ email: email });
-    //   customerId = customer.stripeCustomerId;
-    //   console.log("🚀 ~ createPaymentIntent ~ customerId:", customerId)
-    // }
-
-  } catch (err) {
-    console.error(err);
-    return response.HttpResponse(
-      res,
-      statusCode.serverError,
-      responseStatus.failure,
-      err.message,
-      {}
-    )
-  }
-};
-
-
-
-export const getTokenPrice = async (req, res) => {
-  try {
-    const tokenInfo = {
-      tokenPrice: TOKEN_PRICE,
-    };
-    console.log("🚀 ~ getTokenPrice ~ tokenInfo:", tokenInfo)
-
-    if (tokenInfo.tokenPrice) {
-      console.log("insid eif");
-      return response.HttpResponse(
-        res,
-        statusCode.ok,
-        responseStatus.success,
-        messages.tokenPriceFound,
-        { tokenPrice: tokenInfo.tokenPrice }
-      )
-    }
-    return response.HttpResponse(
-      res,
-      statusCode.badRequest,
-      responseStatus.failure,
-      messages.tokenPriceNotFound,
-      {}
-    )
-  } catch (err) {
-    console.error(err);
-    return response.HttpResponse(
-      res,
-      statusCode.serverError,
-      responseStatus.failure,
-      err.message,
-      {}
-    )
-  }
-};
-
-export const confirmPayment = async (req, res) => {
-
-
-  try {
-    const data = req.query.data;
-    const jsonString = atob(data);
-    const payload = JSON.parse(jsonString);
-    console.log("🚀 ~ createPaymentIntent ~ payload:", payload)
-
-
-    let paymentId = payload.paymentId;
-    console.log("🚀 ~ confirmPayment ~ paymentId:", paymentId)
-    const paymentMethodId = payload.paymentMethodId;
-    console.log("🚀 ~ confirmPayment ~ paymentMethodId:", paymentMethodId)
-
-
-    const intent = await stripe.paymentIntents.confirm(paymentId, { payment_method: paymentMethodId, return_url: 'http://localhost.com' });
-
-    if (!intent) {
-      return response.HttpResponse(
-        res,
-        statusCode.serverError,
-        responseStatus.failure,
-        "Red aaaaaaaaaaa",
-        {}
-      )
-    }
-
-    // Update payment intent status in the database
-    await PaymentIntent.updateOne(
-      { paymentIntentId: paymentId },
-      { status: intent.status },
-    );
-
-    return response.HttpResponse(
-      res,
-      statusCode.created,
-      responseStatus.success,
-      messages.paymentAttached,
-      intent,
-    );
-  } catch (err) {
-    console.error(err);
-    return response.HttpResponse(
-      res,
-      statusCode.serverError,
-      responseStatus.failure,
-      err.message,
-      {}
-    )
-  }
-};
-
-
-export const retreivePayment = async (req, res) => {
-  try {
-    const data = req.query.data;
-    const jsonString = atob(data);
-    const payload = JSON.parse(jsonString);
-    console.log("🚀 ~ retrievePaymentIntent ~ payload:", payload)
-
-
-    let paymentId = payload.paymentId;
-    if (!paymentId) {
-      return response.HttpResponse(
-        res,
-        statusCode.badRequest,
-        responseStatus.failure,
-        messages.enterRequiredData + ":- paymentId not found",
-        {},
-      );
-    }
-    const paymentIntent = await stripe.paymentIntents.retrieve(
-      paymentId
-    );
-    console.log("🚀 ~ retreivePayment ~ paymentIntent:", paymentIntent)
-
-    if (paymentIntent) {
-      return response.HttpResponse(
-        res,
-        statusCode.ok,
-        responseStatus.success,
-        messages.paymentNotFound,
-        paymentIntent,
-      );
-    }
-  }
-  catch (err) {
-    console.log("🚀 ~ retreivePayment ~ err:", err.raw.statusCode)
-    if (err.raw.statusCode == 404) {
-      return response.HttpResponse(
-        res,
-        statusCode.errorPage,
-        responseStatus.failure,
-        messages.paymentNotFound,
-        {},
-      );
-    }
-    return response.HttpResponse(
-      res,
-      statusCode.serverError,
-      responseStatus.failure,
-      err.message,
-      {}
-    )
-  }
-
-
-}
-
-// export const paymentSession = async (req, res) => {
-
-
-//   const data = req.query.data;
-
-//   const jsonString = atob(data);
-//   const payload = JSON.parse(jsonString);
-
-//   const tokens = payload.tokens;
-//   const email = payload.email || "testemail@yopmail.com";
-
-//   // const email = payload.emailId;
-//   // if (!email){
-//   //   return response.HttpResponse(
-//   //     res,
-//   //     statusCode.badRequest,
-//   //     responseStatus.failure,
-//   //     messages.emailRequired,
-//   //     {},
-//   // );
-//   // }
-//   let amount = payload.amount;
-
-//   console.log("🚀 ~ paymentSession ~ tokens type:", typeof (tokens))
-
-//   if (typeof amount !== 'number' || amount <= 0) {
-//     return response.HttpResponse(
-//       res,
-//       statusCode.badRequest,
-//       responseStatus.failure,
-//       messages.amountNotFound,
-//       {},
-//     );
-//   }
-
-//   // Validate tokens
-//   if (!Number.isInteger(tokens) || tokens <= 0) {
-
-//     return response.HttpResponse(
-//       res,
-//       statusCode.badRequest,
-//       responseStatus.failure,
-//       messages.tokensNumbersValid,
-//       {},
-//     );
-//   }
-
-//   console.log("🚀 ~ paymentSession ~ tokens type:", typeof (tokens))
-//   console.log("🚀 ~ paymentSession ~ tokens:", tokens)
-//   console.log("🚀 ~ paymentSession ~ amount:", amount)
-
-//   amount *= tokens
-
-//   console.log("🚀 ~ paymentSession ~ amount:", amount)
-
-//   const integraPublicKeyId = payload.integraPublicKeyId;
-
-//   const session = await stripe.checkout.sessions.create({
-//     line_items: [
-//       {
-//         price_data: {
-//           currency: 'usd',
-//           product_data: {
-//             name: `${tokens} token`
-//           },
-//           unit_amount: amount * 100
-//         },
-//         quantity: tokens
-//       }
-//     ],
-//     mode: 'payment',
-//     success_url: `${process.env.FRONT_END_BASE_URL}/complete?session_id={CHECKOUT_SESSION_ID}`,
-//     cancel_url: `${process.env.FRONT_END_BASE_URL}/cancel`,
-//     customer_email: email
-//   });
-//   console.log("🚀 ~ paymentSession ~ session:", session)
-
-//   // res.json({ url: session.url });
-//   res.json({ url: session.url });
-//   // return response.HttpResponse(
-//   //   res,
-//   //   statusCode.ok,
-//   //   responseStatus.success,
-//   //   messages.urlredirected,
-//   //   session.url,
-//   // );
-// }
-
-
-
-// export const verifyPayment = async (req, res) => {
-//   const { sessionId } = req.query;
-
-//   try {
-//     // Retrieve the session details from Stripe
-//     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
-//     console.log("🚀 ~ verifyPayment ~ stripeSession:", stripeSession);
-
-//     // Verify the payment status
-//     if (stripeSession.payment_status === 'paid') {
-//       // Create a new CheckoutSession document
-//       const checkoutSession = new CheckoutSession({
-//         id: stripeSession.id,
-//         object: stripeSession.object,
-//         amount_subtotal: stripeSession.amount_subtotal,
-//         amount_total: stripeSession.amount_total,
-//         created: new Date(stripeSession.created * 1000), // Convert from timestamp to Date
-//         currency: stripeSession.currency,
-//         customer: stripeSession.customer,
-//         customer_creation: stripeSession.customer_creation,
-//         customer_details: stripeSession.customer_details,
-//         expires_at: new Date(stripeSession.expires_at * 1000), // Convert from timestamp to Date
-//         livemode: stripeSession.livemode,
-//         mode: stripeSession.mode,
-//         payment_intent: stripeSession.payment_intent,
-//         payment_method_options: stripeSession.payment_method_options,
-//         payment_method_types: stripeSession.payment_method_types,
-//         payment_status: stripeSession.payment_status,
-//         status: stripeSession.status,
-//         success_url: stripeSession.success_url
-//       });
-
-//       // Save the document to MongoDB
-//       await checkoutSession.save();
-
-//       return response.HttpResponse(
-//         res,
-//         statusCode.accepted,
-//         responseStatus.success,
-//         messages.paymentSuccess,
-//         { stripeSession: stripeSession, success: true }
-//       );
-
-//       // res.json({ success: true });
-
-//     } else {
-//       return response.HttpResponse(
-//         res,
-//         statusCode.badRequest,
-//         responseStatus.failure,
-//         messages.paymentfailed,
-//         { stripeSession: stripeSession, success: false },
-//       );
-//     }
-//   } catch (error) {
-//     console.error('Error retrieving session:', error);
-//     return response.HttpResponse(
-//       res,
-//       statusCode.serverError,
-//       responseStatus.failure,
-//       error.message,
-//       {}
-//     )
-//   }
-
-// };
+const stripe = new Stripe(stripeSecretKey); 
 
 export const paymentSession = async (req, res) => {
   try {
@@ -765,40 +24,92 @@ export const paymentSession = async (req, res) => {
       );
     }
 
-    const emailId = payload.emailId || "testemail@yopmail.com";
+    const emailId = payload.emailId;
     const integraPublicKeyId = payload.integraPublicKeyId;
+    console.log("🚀 ~ paymentSession ~ integraPublicKeyId:", integraPublicKeyId)
+    if (!payload.integraPublicKeyId || typeof payload.integraPublicKeyId !== 'string') {
+      return response.HttpResponse(
+        res,
+        statusCode.badRequest,
+        responseStatus.failure,
+        messages.integraPublicKeyIdNotFound,
+        {}
+      );
+    }
+
+
+    const tokens = payload.tokens;
+
+    if (!Number.isInteger(tokens) || tokens <= 0) {
+
+      return response.HttpResponse(
+        res,
+        statusCode.badRequest,
+        responseStatus.failure,
+        messages.tokensNumbersValid,
+        {},
+      );
+    }
+
+
     const priceId = payload.priceId;
-    const name = payload.name || "Unknown Name";
-    const organizationid = payload.organizationid || "Unknown Organization";
+    const name = payload.name || '';
+    const organizationid = payload.organizationid || '';
+
 
     console.log("🚀 ~ paymentSession ~ priceId:", priceId);
     console.log("🚀 ~ paymentSession ~ organizationid:", organizationid);
 
-    // Create the Checkout Session for a subscription
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
-          price: priceId, // Use the price ID created earlier
-          quantity: 1, // Quantity of the subscription
+          price: priceId,
+          quantity: 1,
         },
       ],
-      mode: 'subscription', // Changed from 'payment' to 'subscription'
-      success_url: `${process.env.FRONT_END_BASE_URL}/complete?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONT_END_BASE_URL}/cancel`,
+      mode: 'subscription',
+      success_url: `${FRONT_END_BASE_URL}/complete?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${FRONT_END_BASE_URL}/cancel`,
       customer_email: emailId,
       metadata: {
         organizationId: organizationid,
         name: name,
-        phone: '123-456-7890',
         IntegraId: integraPublicKeyId,
         emailId: emailId,
-        tokens:174
+        tokens: tokens,
+        priceId: priceId
       },
     });
 
     console.log("🚀 ~ paymentSession ~ session:", session);
 
-    res.json({ url: session.url });
+
+    const paymentData = {
+      sessionId: session.id,
+      created: session.created,
+      currency: session.currency,
+      status: session.status,
+      customerId: session.customer,
+      customerEmail: session.customer_details.email,
+      paymentIntent: session.payment_intent,
+      payment_status: session.payment_status,
+      invoiceId: session.invoice,
+      metadata: session.metadata,
+      mode: session.mode,
+    }
+
+    const payment = new subscriptionSession(paymentData);
+    await payment.save();
+
+    // res.json({ url: session.url });
+    return response.HttpResponse(
+      res,
+      statusCode.created,
+      responseStatus.success,
+      messages.urlredirected,
+      {url:session.url}
+    );
   } catch (err) {
     console.error('Error creating Checkout Session:', err);
     return response.HttpResponse(
@@ -816,49 +127,8 @@ export const verifyPayment = async (req, res) => {
   const { sessionId } = req.query;
 
   try {
-    // Retrieve the session details from Stripe
     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
-    // console.log("🚀 ~ verifyPayment ~ stripeSession:", stripeSession);
-
-    // Verify the payment status
     if (stripeSession.payment_status === 'paid') {
-      // Create a new CheckoutSession document
-    //   const checkoutSession = new CheckoutSession({
-    //     id: stripeSession.id,
-    //     object: stripeSession.object,
-    //     amount_subtotal: stripeSession.amount_subtotal,
-    //     amount_total: stripeSession.amount_total,
-    //     created: new Date(stripeSession.created * 1000), // Convert from timestamp to Date
-    //     currency: stripeSession.currency,
-    //     customer: stripeSession.customer,
-    //     customer_creation: stripeSession.customer_creation,
-    //     customer_details: stripeSession.customer_details,
-    //     expires_at: new Date(stripeSession.expires_at * 1000), // Convert from timestamp to Date
-    //     livemode: stripeSession.livemode,
-    //     mode: stripeSession.mode,
-    //     payment_method_options: stripeSession.payment_method_options,
-    //     payment_method_types: stripeSession.payment_method_types,
-    //     payment_status: stripeSession.payment_status,
-    //     status: stripeSession.status,
-    //     success_url: stripeSession.success_url,
-    //     metadata: stripeSession.metadata, // Save metadata as a Map
-    //     invoice: stripeSession.invoice, // Store invoice ID
-    //     invoice_creation: {
-    //         enabled: stripeSession.invoice_creation ? true : false,
-    //         invoice_data: stripeSession.invoice_creation ? {
-    //             account_tax_ids: stripeSession.invoice_creation.invoice_data.account_tax_ids,
-    //             custom_fields: stripeSession.invoice_creation.invoice_data.custom_fields,
-    //             description: stripeSession.invoice_creation.invoice_data.description,
-    //             footer: stripeSession.invoice_creation.invoice_data.footer,
-    //             issuer: stripeSession.invoice_creation.invoice_data.issuer,
-    //             metadata: stripeSession.invoice_creation.invoice_data.metadata,
-    //             rendering_options: stripeSession.invoice_creation.invoice_data.rendering_options
-    //         } : {}
-    //     }
-    // });
-    
-    // // Save the document to MongoDB
-    // await checkoutSession.save();
       return response.HttpResponse(
         res,
         statusCode.accepted,
@@ -866,9 +136,6 @@ export const verifyPayment = async (req, res) => {
         messages.paymentSuccess,
         { success: true }
       );
-
-      // res.json({ success: true });
-
     } else {
       return response.HttpResponse(
         res,

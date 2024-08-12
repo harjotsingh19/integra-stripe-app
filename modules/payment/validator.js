@@ -9,7 +9,7 @@ class Validator {
     validateUserEmail() {
 
         return [
-            check('email')
+            check('emailId')
                 .optional()
                 .trim()
                 .notEmpty()
@@ -18,14 +18,6 @@ class Validator {
                 .isEmail()
                 .bail()
                 .withMessage('Please enter valid email.'
-
-                    // if (!user || user?.isDeleted === true) {
-                    //     throw new Error(messages.userNotRegistered);
-                    // }
-                    // if (!user?.isEmailVerified) {
-                    //     throw new Error(messages.userNotVerified);
-                    // }
-
 
 
                 )
