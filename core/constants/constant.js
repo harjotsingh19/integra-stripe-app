@@ -61,6 +61,7 @@ const messages = {
     plansNotFound:"no subscription plans found",
     // Q
     // R
+    renewalDataNotFound:"no renewal data found in db",
     // S
     subscriptionCreated:"subscription created successfully",    
     subscriptionAlreadyRenewed:"subscription already renewed",
@@ -75,6 +76,7 @@ const messages = {
     tokenPriceFound:"token price found",
     tokenPriceNotFound:"token price not found",
     tokensAlreadyAdded:"tokens already credited",
+    tokenCreditAfterInvoice:"token will be added after invoice status becomes paid",
     // U
     userNotRegistered: "No registered user",
     urlredirected:"redirection url",

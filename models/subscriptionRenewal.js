@@ -7,6 +7,7 @@ const subscriptionRenewalSchema = new Schema({
   renewalDate: { type: Number ,default:0},
   tokensCredited: { type: Boolean, default: false },
   sessionId: { type: String, required: true },
+  sessionMetaData:{type: Schema.Types.Mixed},
   customerId : {type: String},
   priceId:{type: String},
   subscriptionType: {
@@ -15,7 +16,7 @@ const subscriptionRenewalSchema = new Schema({
     required: true,
     default: 'first_time'
   },
-  paid: {type: String},
+  paid: {type: Boolean ,default: false},
   invoiceDetails: {
     invoiceId: { type: String },
     amountDue: { type: Number },
@@ -62,7 +63,7 @@ const subscriptionRenewalSchema = new Schema({
   integraPublicKeyData: {
     type: mongoose.Schema.Types.Mixed,
   },
-});
+},{ timestamps: true },);
 
 const SubscriptionRenewal = mongoose.model('SubscriptionRenewal', subscriptionRenewalSchema);
 

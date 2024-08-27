@@ -31,15 +31,28 @@ export const handleStripeWebhook = async (req, res) => {
     switch (event.type) {
 
       case 'customer.subscription.updated': {
-        console.log("inside subscription updated");
+        console.log("");
+        console.log("====================================================================");
+        console.log("customer.subscription.updated event begins");
+        console.log("====================================================================");
+        console.log("");
+
+
+        const timeNow = Math.floor(Date.now() / 1000)
+
+        const eventHitTime = new Date(timeNow * 1000).toLocaleString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        console.log("🚀 ~ handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
 
         const dbConnection = await checkDatabaseConnection();
         console.log("🚀 ~ handleStripeWebhook ~ dbConnection:", dbConnection)
-        if (!dbConnection.status == responseStatus.success){
-          console.log("🚀 ~ handleStripeWebhook ~ db connection failure",dbConnection.message)
+        if (!dbConnection.status == responseStatus.success) {
+          console.log("🚀 ~ handleStripeWebhook ~ db connection failure", dbConnection.message)
           return res.status(statusCode.serverError).json({ status: responseStatus.failure, message: dbConnection.message });
         }
-        
+
         console.log("event data");
         console.log(event.data.object);
 
@@ -112,10 +125,10 @@ export const handleStripeWebhook = async (req, res) => {
 
         const sessionId = sessionData.sessionId;
 
-        let integraPublicKeyId = sessionData.metadata.IntegraId;
+        const integraPublicKeyId = sessionData.metadata.IntegraId;
 
         if (existingRenewal && existingRenewal.tokensCredited) {
-          
+
           console.log("🚀 ~ handleStripeWebhook ~ existingRenewal:", existingRenewal?.integraPublicKeyData)
 
           // const timeNow = Math.floor(Date.now() / 1000)
@@ -134,109 +147,279 @@ export const handleStripeWebhook = async (req, res) => {
 
         // Fetch the latest invoice details if needed
         const invoice = await stripe.invoices.retrieve(invoiceId);
+        console.log("=======================================================================================");
+        console.log("🚀 ~ handleStripeWebhook subscription update ~ invoice:", invoice.paid)
+        console.log("=======================================================================================");
+        console.log("🚀 ~ handleStripeWebhook type of subscription update ~ invoice:", typeof (invoice.paid))
+        console.log("=======================================================================================");
+        // console.log("🚀 ~ handleStripeWebhook ~ invoice:", invoice)
 
-        if (invoice.paid) {
-          const priceId = updatedSubscription.plan.id;
-          const subscriptionPlan = await SubscriptionPlan.findOne({ priceId });
 
-          if (!subscriptionPlan) {
-            console.log('Subscription plan not found for priceId:', priceId);
-            return res.status(statusCode.badRequest).json({
-              status: responseStatus.failure,
-              message: messages.subscriptionPlanNotFound,
-            });
-          }
+        // if (invoice.paid) {
+        const priceId = updatedSubscription.plan.id;
+        const subscriptionPlan = await SubscriptionPlan.findOne({ priceId });
 
-          const tokens = subscriptionPlan.numberOfTokens || 0; 
-          console.log("🚀 ~ numbers of tokens to add :", tokens)
-          if (!Number.isInteger(tokens) || tokens <= 0) {
+        if (!subscriptionPlan) {
+          console.log('Subscription plan not found for priceId:', priceId);
+          return res.status(statusCode.badRequest).json({
+            status: responseStatus.failure,
+            message: messages.subscriptionPlanNotFound,
+          });
+        }
 
-            return response.HttpResponse(
-              res,
-              statusCode.badRequest,
-              responseStatus.failure,
-              messages.tokensNumbersValid,
-              {},
-            );
-          }
+        const tokens = subscriptionPlan.numberOfTokens || 0;
+        console.log("🚀 ~ numbers of tokens to add :", tokens)
+        if (!Number.isInteger(tokens) || tokens <= 0) {
 
-         
-          const newRenewal = await SubscriptionRenewal.findOneAndUpdate({ renewalId: renewalId }, {
-            $set: {
-              subscriptionId: subscriptionId,
-              renewalDate: Math.floor(Date.now() / 1000),
+          return response.HttpResponse(
+            res,
+            statusCode.badRequest,
+            responseStatus.failure,
+            messages.tokensNumbersValid,
+            {},
+          );
+        }
+
+
+        const newRenewal = await SubscriptionRenewal.findOneAndUpdate({ renewalId: renewalId }, {
+          $set: {
+            subscriptionId: subscriptionId,
+            renewalDate: Math.floor(Date.now() / 1000),
+            customerId: invoice.customer,
+            sessionId: sessionId,
+            sessionMetaData: sessionData.metadata,
+            paid: invoice.paid,
+            priceId: priceId,
+            subscriptionType: 'renew',
+            invoiceDetails: {
+              invoiceId: invoice.id,
+              amountDue: invoice.amount_due / 100,
+              amountPaid: invoice.amount_paid / 100,
+              created: invoice.created,
+              currency: invoice.currency,
               customerId: invoice.customer,
-              sessionId: sessionId,
+              customerEmail: invoice.customer_email,
+              customerName: invoice.customer_name,
+              invoiceUrl: invoice.url,
+              invoicePdf: invoice.pdf_url,
               paid: invoice.paid,
-              priceId: priceId,
-              subscriptionType: 'renew',
-              invoiceDetails: {
-                invoiceId: invoice.id,
-                amountDue: invoice.amount_due / 100,
-                amountPaid: invoice.amount_paid / 100,
-                created: invoice.created,
-                currency: invoice.currency,
-                customerId: invoice.customer,
-                customerEmail: invoice.customer_email,
-                customerName: invoice.customer_name,
-                invoiceUrl: invoice.url,
-                invoicePdf: invoice.pdf_url,
-                paid: invoice.paid,
-                paymentIntent: invoice.payment_intent,
-                status: invoice.status,
-                statementDescriptor: invoice.statement_descriptor,
-                subtotal: invoice.subtotal / 100,
-                total: invoice.total / 100
-              },
-              subscriptionDetails: {
-                subscriptionId: updatedSubscription.id,
-                created: updatedSubscription.created,
-                currency: updatedSubscription.currency,
-                status: updatedSubscription.status,
-                currentPeriodStart: updatedSubscription.current_period_start,
-                currentPeriodEnd: updatedSubscription.current_period_end,
-                startDate: updatedSubscription.start_date,
-                customerId: updatedSubscription.customer,
-                defaultPaymentMethod: updatedSubscription.default_payment_method,
-                latestInvoice: updatedSubscription.latest_invoice,
-                items: updatedSubscription.items,
-                planDetails: {
-                  planId: updatedSubscription.plan.id,
-                  created: updatedSubscription.plan.created,
-                  currency: updatedSubscription.plan.currency,
-                  interval: updatedSubscription.plan.interval,
-                  intervalCount: updatedSubscription.plan.interval_count,
-                  tokens: updatedSubscription.plan.tokens,
-                  product: updatedSubscription.plan.product,
-                  amount: updatedSubscription.plan.amount / 100,
-                  quantity: updatedSubscription.plan.quantity,
-                },
+              paymentIntent: invoice.payment_intent,
+              status: invoice.status,
+              statementDescriptor: invoice.statement_descriptor,
+              subtotal: invoice.subtotal / 100,
+              total: invoice.total / 100
+            },
+            subscriptionDetails: {
+              subscriptionId: updatedSubscription.id,
+              created: updatedSubscription.created,
+              currency: updatedSubscription.currency,
+              status: updatedSubscription.status,
+              currentPeriodStart: updatedSubscription.current_period_start,
+              currentPeriodEnd: updatedSubscription.current_period_end,
+              startDate: updatedSubscription.start_date,
+              customerId: updatedSubscription.customer,
+              defaultPaymentMethod: updatedSubscription.default_payment_method,
+              latestInvoice: updatedSubscription.latest_invoice,
+              items: updatedSubscription.items,
+              planDetails: {
+                planId: updatedSubscription.plan.id,
+                created: updatedSubscription.plan.created,
+                currency: updatedSubscription.plan.currency,
+                interval: updatedSubscription.plan.interval,
+                intervalCount: updatedSubscription.plan.interval_count,
+                tokens: tokens,
+                product: updatedSubscription.plan.product,
+                amount: updatedSubscription.plan.amount / 100,
+                quantity: updatedSubscription.plan.quantity,
               },
             },
-          }, { upsert: true, 'new': true });
+          },
+        }, { upsert: true, 'new': true });
 
 
-          console.log('Created new renewal record:', newRenewal);
+        console.log('Created new renewal record:', newRenewal);
 
 
 
-          // Credit tokens if not already credited in this event or  on calling event again
-          if (!newRenewal.tokensCredited) {
+        // Credit tokens if not already credited in this event or  on calling event again
+        if (!newRenewal.tokensCredited) {
+
+          console.log("tokens will be credited when invoice payment succeeded");
+          console.log("");
+          console.log("====================================================================");
+          console.log("customer.subscription.updated event ends");
+          console.log("====================================================================");
+          console.log("");
+          return res.status(statusCode.ok).json({ statusCode: statusCode.ok, received: true, message: messages.tokenCreditAfterInvoice });
+
+
+          // console.log("inside credit tokens subscription renew");
+          // const tokenInfo = await creditTokens(sessionData.metadata.IntegraId, tokens);
+          // console.log("🚀 ~ handleStripeWebhook ~ tokenInfo:", tokenInfo)
+
+          // if (tokenInfo.statusCode == statusCode.ok && tokenInfo.data) {
+          //   console.log("🚀 ~ handleStripeWebhook ~ tokenInfo.data:", tokenInfo.data)
+          //   console.log("🚀 ~ handleStripeWebhook ~ tokenInfo.statusCode:", tokenInfo.statusCode)
+
+          //   await SubscriptionRenewal.findOneAndUpdate(
+          //     { renewalId },
+          //     { $set: { tokensCredited: true, integraPublicKeyData: tokenInfo.data } },
+          //     { new: true }
+          //   );
+
+          //   console.log(`Tokens credited for : ${integraPublicKeyId} in renewalId : ${renewalId}`);
+
+          // } else {
+          //   console.log("token not added", tokenInfo);
+          //   return response.HttpResponse(
+          //     res,
+          //     tokenInfo.statusCode,
+          //     responseStatus.failure,
+          //     tokenInfo.message,
+          //     tokenInfo.data
+          //   );
+
+          // }
+        } else {
+          console.log(`tokens already credited to ${integraPublicKeyId} in this renew event :- ${renewalId}`);
+          console.log("");
+          console.log("====================================================================");
+          console.log("customer.subscription.updated event ends");
+          console.log("====================================================================");
+          console.log("");
+          return res.status(statusCode.ok).json({ statusCode: statusCode.ok, received: true, message: messages.tokensAlreadyAdded });
+
+
+
+        }
+
+        // } else {
+        //   console.log("invoice paid status is false , so payment is still in pending state , tokens will be added later");
+        //   return res.status(statusCode.errorPage).json({
+        //     responseStatus: responseStatus.failure,
+        //     message: messages.invoiceFalseStatus
+        //   });
+        // }
+
+
+
+
+      }
+        console.log("🚀 ~ handleStripeWebhook ~ invoice:", invoice)
+
+
+      case 'invoice.payment_succeeded': {
+
+        console.log("");
+        console.log("====================================================================");
+        console.log("invoice payment succeeded event begins");
+        console.log("====================================================================");
+        console.log("");
+
+        const timeNow = Math.floor(Date.now() / 1000)
+
+        const eventHitTime = new Date(timeNow * 1000).toLocaleString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        console.log("🚀 ~ handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
+
+        await checkDatabaseConnection();
+        console.log("")
+        console.log("TCL: handleStripeWebhook -> event.id", event.id)
+        console.log("");
+        console.log("TCL: handleStripeWebhook -> event", event.type)
+        console.log("");
+
+
+        const invoice = event.data.object;
+        console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ invoice:", invoice);
+        console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ invoice.paid:", invoice.paid)
+
+
+        if (invoice.paid) {
+          const subscriptionId = invoice.subscription;
+          const subscriptionStripe = await stripe.subscriptions.retrieve(
+            subscriptionId
+          );
+          console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionStripe:", subscriptionStripe)
+
+
+          const subscriptionRenewalData = await waitForSubscriptionData(subscriptionId, invoice.id);
+          console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData:", subscriptionRenewalData);
+
+          // const subscriptionRenewalData = await SubscriptionRenewal.findOne({
+          //   subscriptionId: subscriptionId,
+          //   "invoiceDetails.invoiceId": invoice.id
+
+          // });
+          console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData:", subscriptionRenewalData)
+
+
+          if (!subscriptionRenewalData?.tokensCredited) {
+            console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData.subscriptionType:", subscriptionRenewalData?.subscriptionType)
+            if (subscriptionRenewalData?.subscriptionType != "renew") {
+              console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ this is not a renewal of subscription")
+              return res.status(statusCode.ok).json({
+                status: responseStatus.success,
+                message: 'this is not a renewal of subscription.',
+
+              });
+            }
+
+            console.log("🚀 ~ handleStripeWebhook ~ subscriptionStripe.current_period_start:", subscriptionStripe.current_period_start)
+            console.log("");
+
+            console.log("🚀 ~ handleStripeWebhook ~ subscriptionRenewalData.currentPeriodStart:", subscriptionRenewalData.subscriptionDetails.currentPeriodStart)
+            console.log("");
+
+            console.log("🚀 ~ handleStripeWebhook ~ subscriptionRenewalData.currentPeriodEnd:", subscriptionRenewalData.subscriptionDetails.currentPeriodEnd)
+            console.log("");
+            console.log("🚀 ~ handleStripeWebhook ~ subscriptionStripe.current_period_end:", subscriptionStripe.current_period_end)
+            console.log("");
+
+            if (!(subscriptionStripe.current_period_start == subscriptionRenewalData.subscriptionDetails.currentPeriodStart && subscriptionStripe.current_period_end == subscriptionRenewalData.subscriptionDetails.currentPeriodEnd)) {
+
+
+              console.log("");
+              console.log("🚀 ~ subscription start and end dates do not match for subscription fech through stripe and db")
+              console.log("");
+
+              return res.status(statusCode.errorPage).json({
+                status: responseStatus.failure,
+                message: 'invoice subscription and subscription data from db does not matched',
+
+              });
+            }
+
+
+            const integraPublicKeyId = subscriptionRenewalData.sessionMetaData.IntegraId;
+
+
+            const tokens = subscriptionRenewalData.subscriptionDetails.planDetails.tokens;
+            console.log("🚀 ~ handleStripeWebhook ~ tokens:", tokens)
             console.log("inside credit tokens subscription renew");
-            const tokenInfo = await creditTokens(sessionData.metadata.IntegraId, tokens);
+            const tokenInfo = await creditTokens(integraPublicKeyId, tokens);
+
             console.log("🚀 ~ handleStripeWebhook ~ tokenInfo:", tokenInfo)
 
             if (tokenInfo.statusCode == statusCode.ok && tokenInfo.data) {
               console.log("🚀 ~ handleStripeWebhook ~ tokenInfo.data:", tokenInfo.data)
               console.log("🚀 ~ handleStripeWebhook ~ tokenInfo.statusCode:", tokenInfo.statusCode)
 
-              await SubscriptionRenewal.findOneAndUpdate(
-                { renewalId },
-                { $set: { tokensCredited: true, integraPublicKeyData: tokenInfo.data } },
+              console.log("subscriptionId :- ", subscriptionId);
+
+              console.log("subscriptionId :- ", invoice.id);
+
+              const updated = await SubscriptionRenewal.findOneAndUpdate(
+                { subscriptionId, "invoiceDetails.invoiceId": invoice.id },
+                { $set: { tokensCredited: true, integraPublicKeyData: tokenInfo.data, "invoiceDetails.paid": true } },
                 { new: true }
               );
+              console.log("🚀 ~ handleStripeWebhook ~ updated:", updated)
 
-              console.log(`Tokens credited for : ${integraPublicKeyId} in renewalId : ${renewalId}`);
+              console.log(`Tokens credited for : ${integraPublicKeyId} with event id : ${event.id}`);
+
             } else {
               console.log("token not added", tokenInfo);
               return response.HttpResponse(
@@ -246,25 +429,44 @@ export const handleStripeWebhook = async (req, res) => {
                 tokenInfo.message,
                 tokenInfo.data
               );
-
             }
+
           } else {
-            console.log(`tokens already credited to ${integraPublicKeyId} in this renew event :- ${renewalId}`);
+            console.log("🚀 ~ handleStripeWebhook invoice payment succeeded ~ tokens already credited")
           }
 
+
         } else {
-          console.log("invoice paid status is false , so payment is still in pending state , tokens will be added later");
-          return res.status(statusCode.errorPage).json({
-            responseStatus: responseStatus.failure,
-            message: messages.invoiceFalseStatus
+          console.log("🚀 ~ handleStripeWebhook ~ invoice.paid status is still false:-", invoice.paid)
+          return res.status(statusCode.serverError).json({
+            status: responseStatus.failure,
+            message: 'invoice paid status is still false , tokens can not be added',
+
           });
         }
-
-        
+        console.log("");
+        console.log("====================================================================");
+        console.log("invoice payment succeeded event ends");
+        console.log("====================================================================");
+        console.log("");
         break;
       }
 
       case 'checkout.session.completed': {
+        console.log("");
+        console.log("====================================================================");
+        console.log("checkout.session.completed event begins");
+        console.log("====================================================================");
+        console.log("");
+
+        const timeNow = Math.floor(Date.now() / 1000)
+
+        const eventHitTime = new Date(timeNow * 1000).toLocaleString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+
+        console.log("🚀 ~ handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
         const session = event.data.object;
         // console.log("TCL: handleStripeWebhook -> session", session)
         console.log("inside Session");
@@ -293,13 +495,13 @@ export const handleStripeWebhook = async (req, res) => {
         console.log('Session metadata:', metadata);
 
         console.log("");
-     
+
 
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription)
         console.log("");
-      
+
         console.log("");
-       
+
 
         console.log("");
 
@@ -324,8 +526,6 @@ export const handleStripeWebhook = async (req, res) => {
             });
           }
 
-
-   
           integraPublicKeyId = sessionData.metadata.IntegraId;
           console.log("");
           console.log("TCL: handleStripeWebhook -> integraPublicKeyId", integraPublicKeyId)
@@ -335,13 +535,8 @@ export const handleStripeWebhook = async (req, res) => {
           console.log("");
 
 
-
-
-
           if (!isTokenCredited) {
 
-
-            // const timeNow = Math.floor(Date.now() / 1000)
             if (sessionData?.integraPublicKeyData?.lastTokensAddedTime > 0) {
               console.log(`timenow condition check result ,last token added value greater than 0:- ${messages.tokensAlreadyAdded}`);
               return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.tokensAlreadyAdded })
@@ -354,9 +549,9 @@ export const handleStripeWebhook = async (req, res) => {
               console.log("");
               console.log('Subscription plan not found for priceId:', priceId);
               console.log("");
-              return res.status(400).json({
+              return res.status(statusCode.errorPage).json({
                 status: responseStatus.failure,
-                message: 'Subscription plan not found',
+                message: messages.subscriptionPlanNotFound,
 
               });
             }
@@ -520,7 +715,7 @@ export const handleStripeWebhook = async (req, res) => {
               );
 
               const updatedTokenInfo = await subscriptionSession.findOneAndUpdate(
-                { sessionId: sessionId }, 
+                { sessionId: sessionId },
                 {
                   $set: {
                     integraPublicKeyData: tokenInfo.data
@@ -551,6 +746,11 @@ export const handleStripeWebhook = async (req, res) => {
               console.log("updated db", updatedPayment);
               console.log("");
               console.log(`${tokens} tokens added successfully to ${integraPublicKeyId}`);
+              console.log("");
+              console.log("====================================================================");
+              console.log("checkout.session.completed event ends");
+              console.log("====================================================================");
+              console.log("");
               return response.HttpResponse(
                 res,
                 statusCode.accepted,
@@ -577,6 +777,11 @@ export const handleStripeWebhook = async (req, res) => {
           }
         } else {
           console.log("invoice paid status is false , so payment is still in pending state , tokens will be added later");
+          console.log("");
+          console.log("====================================================================");
+          console.log("checkout.session.completed event ends");
+          console.log("====================================================================");
+          console.log("");
           return res.status(statusCode.errorPage).json({
             responseStatus: responseStatus.failure,
             message: messages.invoiceFalseStatus
@@ -584,6 +789,11 @@ export const handleStripeWebhook = async (req, res) => {
         }
 
       }
+        console.log("");
+        console.log("====================================================================");
+        console.log("checkout.session.completed event ends");
+        console.log("====================================================================");
+        console.log("");
 
         break;
 
@@ -594,7 +804,7 @@ export const handleStripeWebhook = async (req, res) => {
 
     }
 
-    return res.status(200).json({ statusCode: 200, received: true, message: "token added successfully" });
+    return res.status(statusCode.ok).json({ statusCode: statusCode.ok, received: true, message: "token added successfully" });
   } catch (err) {
     console.error('Webhook error found:', err.message);
     return res.status(400).json({
@@ -682,10 +892,36 @@ export const handleStripeWebhook = async (req, res) => {
       return { statusCode: statusCode.ok, status: responseStatus.success, message: "Connected to database", data: {} }
     } catch (error) {
       console.error('Database connection failed:', error);
-       return { statusCode: statusCode.serverError, status: responseStatus.failure, message: error.message, data: {} }
+      return { statusCode: statusCode.serverError, status: responseStatus.failure, message: error.message, data: {} }
     }
   }
 
+
+
+  async function waitForSubscriptionData(subscriptionId, invoiceId, retries = 70, delay = 60000) {
+    for (let i = 0; i < retries; i++) {
+      console.log("");
+      console.log("retry no. :-",i+1);
+      console.log("");
+      const subscriptionRenewalData = await SubscriptionRenewal.findOne({
+        subscriptionId: subscriptionId,
+        "invoiceDetails.invoiceId": invoiceId
+      });
+      if (subscriptionRenewalData) {
+        console.log("🚀 ~ waitForSubscriptionData ~ subscriptionRenewalData:", subscriptionRenewalData)
+        return subscriptionRenewalData;
+        
+      }
+      await new Promise(resolve => setTimeout(resolve, delay)); 
+    }
+
+    return res.status(statusCode.errorPage).json({
+      status: responseStatus.failure,
+      message: messages.renewalDataNotFound,
+
+    });
+    throw new Error('Subscription data not available after maximum retries');
+  }
 
 
 
