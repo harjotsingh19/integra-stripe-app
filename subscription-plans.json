@@ -10,7 +10,7 @@
       "name": "Personal",
       "description": "Access to Personal Plan of 174 tokens with annual billing option",
       "period": "year",
-      "amount": 15,
+      "amount": 180,
       "numberOfTokens": 174
     },
     {
@@ -24,7 +24,7 @@
       "name": "Standard",
       "description": "Access to Standard Plan of 600 tokens with annual billing option",
       "period": "year",
-      "amount": 40,
+      "amount": 480,
       "numberOfTokens": 600
     },
     {
@@ -38,7 +38,7 @@
       "name": "Pro",
       "description": "Access to Pro Plan of 1500 tokens with annual billing option",
       "period": "year",
-      "amount": 75,
+      "amount": 900,
       "numberOfTokens": 1500
     },
     {
