@@ -15,6 +15,7 @@ const messages = {
     // D
     dataNotFound: 'Data not found.',
     dataFound: 'Data found successfully.',
+    dbConnected:"database connected",
     // E
     emailRequired:"emailId is required",
     emailNotFound:

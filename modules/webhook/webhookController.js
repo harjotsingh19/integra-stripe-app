@@ -58,7 +58,11 @@ export const handleStripeWebhook = async (req, res) => {
 
         const updatedSubscription = event.data.object;
         const subscriptionId = updatedSubscription.id;
+        
         const renewalId = event.id;
+        console.log("🚀 ~ handleStripeWebhook ~ event.id:", event.id)
+        console.log("🚀 ~ handleStripeWebhook ~ updatedSubscription.id:", updatedSubscription.id)
+        
         console.log("🚀 ~ renewalId:", renewalId)
         const invoiceId = updatedSubscription.latest_invoice;
 
@@ -326,8 +330,9 @@ export const handleStripeWebhook = async (req, res) => {
 
         await checkDatabaseConnection();
         console.log("")
-        console.log("TCL: handleStripeWebhook -> event.id", event.id)
+        console.log("TCL: handleStripeWebhook -> invoice.payment_succeeded event.id", event.id)
         console.log("");
+        console.log("TCL: handleStripeWebhook -> invoice.payment_succeeded invoice id", invoice.id)
         console.log("TCL: handleStripeWebhook -> event", event.type)
         console.log("");
 
@@ -459,6 +464,9 @@ export const handleStripeWebhook = async (req, res) => {
         console.log("====================================================================");
         console.log("");
 
+
+       
+
         const timeNow = Math.floor(Date.now() / 1000)
 
         const eventHitTime = new Date(timeNow * 1000).toLocaleString('en-US', {
@@ -474,22 +482,23 @@ export const handleStripeWebhook = async (req, res) => {
 
         await checkDatabaseConnection();
         console.log("")
-        console.log("TCL: handleStripeWebhook -> event.id", event.id)
-        console.log("");
         console.log("TCL: handleStripeWebhook -> event", event.type)
         console.log("");
 
         const sessionId = session.id
+        console.log("🚀 ~ handleStripeWebhook ~ session.id:", session.id)
+
+        console.log("TCL: handleStripeWebhook -> event.id", event.id)
+        console.log("");
 
 
         let metadata, updatedPayment, integraPublicKeyId, isTokenCredited;
         let invoiceId = session.invoice;
-        // console.log("TCL: handleStripeWebhook -> session", session.invoice)
+      
 
         console.log("");
         const invoice = await stripe.invoices.retrieve(invoiceId);
-        // console.log("TCL: handleStripeWebhook -> invoice", invoice)
-
+        
         console.log("");
         metadata = session.metadata;
         console.log('Session metadata:', metadata);
@@ -513,7 +522,7 @@ export const handleStripeWebhook = async (req, res) => {
 
 
           sessionData = await subscriptionSession.findOne({ sessionId: sessionId });
-          console.log("🚀 ~ handleStripeWebhook ~ sessionData1:", sessionData)
+          console.log("🚀 ~ handleStripeWebhook ~ sessionData:", sessionData)
           console.log("");
 
 
@@ -843,10 +852,8 @@ export const handleStripeWebhook = async (req, res) => {
         Amount: tokens,
         Issue: false
       });
+
       // Add tokens to blockchain
-
-
-
       const lastTokensAddedTime = Math.floor(Date.now() / 1000)
       console.log("🚀 ~ creditTokens ~ lastTokensAddedTime:", lastTokensAddedTime)
       const addTokenResponse = await axios.post(`${Blockchain_url}/addToken`, {
@@ -885,11 +892,10 @@ export const handleStripeWebhook = async (req, res) => {
 
   async function checkDatabaseConnection() {
     try {
-      // Assuming `subscriptionSession` is your MongoDB collection
-      // Run a simple command or query to check connection
+     
       await subscriptionSession.findOne({});
       await SubscriptionRenewal.findOne({});
-      return { statusCode: statusCode.ok, status: responseStatus.success, message: "Connected to database", data: {} }
+      return { statusCode: statusCode.ok, status: responseStatus.success, message: messages.dbConnected, data: {} }
     } catch (error) {
       console.error('Database connection failed:', error);
       return { statusCode: statusCode.serverError, status: responseStatus.failure, message: error.message, data: {} }
@@ -901,14 +907,14 @@ export const handleStripeWebhook = async (req, res) => {
   async function waitForSubscriptionData(subscriptionId, invoiceId, retries = 70, delay = 60000) {
     for (let i = 0; i < retries; i++) {
       console.log("");
-      console.log("retry no. :-",i+1);
+      console.log(` retry no. ${i+1} for subscriptionID :-${subscriptionId}`);
       console.log("");
       const subscriptionRenewalData = await SubscriptionRenewal.findOne({
         subscriptionId: subscriptionId,
         "invoiceDetails.invoiceId": invoiceId
       });
       if (subscriptionRenewalData) {
-        console.log("🚀 ~ waitForSubscriptionData ~ subscriptionRenewalData:", subscriptionRenewalData)
+        // console.log("🚀 ~ waitForSubscriptionData ~ subscriptionRenewalData:", subscriptionRenewalData)
         return subscriptionRenewalData;
         
       }
@@ -920,7 +926,7 @@ export const handleStripeWebhook = async (req, res) => {
       message: messages.renewalDataNotFound,
 
     });
-    throw new Error('Subscription data not available after maximum retries');
+    // throw new Error('Subscription data not available after maximum retries');
   }
 
 
