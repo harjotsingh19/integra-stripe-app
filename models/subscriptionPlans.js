@@ -33,6 +33,6 @@ const productSchema = new Schema({
   numberOfTokens: { type: Number, required: true } ,
 }, { timestamps: true }); // Adds createdAt and updatedAt fields automatically
 
-const SubsciptionPlan = mongoose.model('SubsciptionPlan', productSchema);
+const SubscriptionPlan = mongoose.model('SubscriptionPlan', productSchema);
 
-export default SubsciptionPlan;
+export default SubscriptionPlan;
