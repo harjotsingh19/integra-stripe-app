@@ -329,17 +329,20 @@ export const handleStripeWebhook = async (req, res) => {
         console.log("🚀 ~ handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
 
         await checkDatabaseConnection();
-        console.log("")
-        console.log("TCL: handleStripeWebhook -> invoice.payment_succeeded event.id", event.id)
-        console.log("");
-        console.log("TCL: handleStripeWebhook -> invoice.payment_succeeded invoice id", invoice.id)
-        console.log("TCL: handleStripeWebhook -> event", event.type)
-        console.log("");
+   
 
 
         const invoice = event.data.object;
         console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ invoice:", invoice);
         console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ invoice.paid:", invoice.paid)
+
+        console.log("")
+        console.log("TCL: handleStripeWebhook -> invoice.payment_succeeded event.id", event.id)
+        console.log("");
+        console.log("TCL: handleStripeWebhook -> invoice.payment_succeeded invoice id", invoice.id)
+        console.log("");
+        console.log("TCL: handleStripeWebhook -> event", event.type)
+        console.log("");
 
 
         if (invoice.paid) {
