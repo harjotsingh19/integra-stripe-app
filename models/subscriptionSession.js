@@ -34,6 +34,7 @@ const stripeSession = new Schema({
     subtotal: { type: Number },
     total: { type: Number }
   },
+  subscriptionId:{ type: String },
   subscriptionDetails: {
     subscriptionId: { type: String },
     created: { type: Number },

@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import axios, { HttpStatusCode } from 'axios';
-import { stripeSecretKey, Blockchain_url, AUCTORITAS_USERNAME, AUCTORITAS_PASSWORD, STRIPE_WEBHOOK_SECRET } from '../../config/config.js';
+import { stripeSecretKey, Blockchain_testnet_url, Blockchain_mainnet_url, AUCTORITAS_USERNAME, AUCTORITAS_PASSWORD, STRIPE_WEBHOOK_SECRET } from '../../config/config.js';
 import SubscriptionPlan from '../../models/subscriptionPlans.js';
 import subscriptionSession from '../../models/subscriptionSession.js'
 // import { responseStatus } from "../../core/constants/constant.js";
@@ -58,11 +58,11 @@ export const handleStripeWebhook = async (req, res) => {
 
         const updatedSubscription = event.data.object;
         const subscriptionId = updatedSubscription.id;
-        
+
         const renewalId = event.id;
         console.log("🚀 ~ handleStripeWebhook ~ event.id:", event.id)
         console.log("🚀 ~ handleStripeWebhook ~ updatedSubscription.id:", updatedSubscription.id)
-        
+
         console.log("🚀 ~ renewalId:", renewalId)
         const invoiceId = updatedSubscription.latest_invoice;
 
@@ -241,7 +241,9 @@ export const handleStripeWebhook = async (req, res) => {
         }, { upsert: true, 'new': true });
 
 
+        console.log("");
         console.log('Created new renewal record:', newRenewal);
+        console.log("");
 
 
 
@@ -254,7 +256,7 @@ export const handleStripeWebhook = async (req, res) => {
           console.log("customer.subscription.updated event ends");
           console.log("====================================================================");
           console.log("");
-          return res.status(statusCode.ok).json({ statusCode: statusCode.ok, received: true, message: messages.tokenCreditAfterInvoice });
+          return res.status(statusCode.ok).json({ statusCode: statusCode.ok, received: true, message: messages.tokenCreditAfterInvoice, data: newRenewal });
 
 
           // console.log("inside credit tokens subscription renew");
@@ -329,7 +331,7 @@ export const handleStripeWebhook = async (req, res) => {
         console.log("🚀 ~ handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
 
         await checkDatabaseConnection();
-   
+
 
 
         const invoice = event.data.object;
@@ -354,15 +356,16 @@ export const handleStripeWebhook = async (req, res) => {
 
 
           const subscriptionRenewalData = await waitForSubscriptionData(subscriptionId, invoice.id);
-          console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData:", subscriptionRenewalData);
+          // console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData:", subscriptionRenewalData);
 
           // const subscriptionRenewalData = await SubscriptionRenewal.findOne({
           //   subscriptionId: subscriptionId,
           //   "invoiceDetails.invoiceId": invoice.id
 
           // });
-          console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData:", subscriptionRenewalData)
+          // console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData:", subscriptionRenewalData)
 
+          console.log("outside waitForSubscriptionData");
 
           if (!subscriptionRenewalData?.tokensCredited) {
             console.log("🚀 ~ handleStripeWebhook invoice.payment_succeeded ~ subscriptionRenewalData.subscriptionType:", subscriptionRenewalData?.subscriptionType)
@@ -407,7 +410,9 @@ export const handleStripeWebhook = async (req, res) => {
             const tokens = subscriptionRenewalData.subscriptionDetails.planDetails.tokens;
             console.log("🚀 ~ handleStripeWebhook ~ tokens:", tokens)
             console.log("inside credit tokens subscription renew");
-            const tokenInfo = await creditTokens(integraPublicKeyId, tokens);
+
+            const isMainnet = subscriptionRenewalData.sessionMetaData.isMainnet;
+            const tokenInfo = await creditTokens(integraPublicKeyId, tokens, isMainnet);
 
             console.log("🚀 ~ handleStripeWebhook ~ tokenInfo:", tokenInfo)
 
@@ -421,7 +426,7 @@ export const handleStripeWebhook = async (req, res) => {
 
               const updated = await SubscriptionRenewal.findOneAndUpdate(
                 { subscriptionId, "invoiceDetails.invoiceId": invoice.id },
-                { $set: { tokensCredited: true, integraPublicKeyData: tokenInfo.data, "invoiceDetails.paid": true } },
+                { $set: { tokensCredited: true, integraPublicKeyData: tokenInfo.data, "invoiceDetails.paid": true, paid: true } },
                 { new: true }
               );
               console.log("🚀 ~ handleStripeWebhook ~ updated:", updated)
@@ -468,7 +473,7 @@ export const handleStripeWebhook = async (req, res) => {
         console.log("");
 
 
-       
+
 
         const timeNow = Math.floor(Date.now() / 1000)
 
@@ -497,24 +502,18 @@ export const handleStripeWebhook = async (req, res) => {
 
         let metadata, updatedPayment, integraPublicKeyId, isTokenCredited;
         let invoiceId = session.invoice;
-      
+
 
         console.log("");
         const invoice = await stripe.invoices.retrieve(invoiceId);
-        
+
         console.log("");
         metadata = session.metadata;
         console.log('Session metadata:', metadata);
 
         console.log("");
 
-
         const subscription = await stripe.subscriptions.retrieve(invoice.subscription)
-        console.log("");
-
-        console.log("");
-
-
         console.log("");
 
         const priceId = subscription.plan.id;
@@ -616,8 +615,9 @@ export const handleStripeWebhook = async (req, res) => {
                     payment_intent: invoice.payment_intent,
                     subtotal: invoice.subtotal / 100,
                     total: invoice.total / 100
-                  }
-                  , subscriptionDetails: {
+                  },
+                  subscriptionId: invoice.subscription,
+                  subscriptionDetails: {
                     subscriptionId: invoice.subscription,
                     created: subscription.created,
                     currency: subscription.currency,
@@ -704,10 +704,12 @@ export const handleStripeWebhook = async (req, res) => {
 
 
 
-            console.log("inside credite tokens");
+            console.log("========================= inside credit tokens =========================");
 
 
-            const tokenInfo = await creditTokens(integraPublicKeyId, tokens);
+            const isMainnet = sessionData.metadata.isMainnet;
+
+            const tokenInfo = await creditTokens(integraPublicKeyId, tokens, isMainnet);
 
             if (tokenInfo.statusCode == statusCode.ok && tokenInfo.data) {
 
@@ -781,7 +783,7 @@ export const handleStripeWebhook = async (req, res) => {
                 tokenInfo.data
               );
 
-            }
+            } 
 
           } else {
             console.log("");
@@ -826,9 +828,23 @@ export const handleStripeWebhook = async (req, res) => {
   }
 
 
-  async function creditTokens(integraPublicKeyId, tokens) {
+  async function creditTokens(integraPublicKeyId, tokens, isMainnet) {
+
+
     try {
       let auth_token;
+      console.log("🚀 ~ creditTokens ~ isMainnet:", isMainnet)
+      let isTestnet = isMainnet == "false"
+      console.log("🚀 ~ creditTokens ~ isMainnet type:", typeof (isTestnet))
+      let Blockchain_url = Blockchain_mainnet_url;
+      if (isTestnet) {
+        console.log("🚀 ~ creditTokens inside if ~ isTestnet:", isTestnet)
+
+        Blockchain_url = Blockchain_testnet_url
+
+      }
+      console.log("is crediting tokens to testnet :-  ", isTestnet);
+      console.log("🚀 ~ creditTokens ~ Blockchain_url:", Blockchain_url);
 
       const authResponse = await axios.post(`${Blockchain_url}/auctoritas`, {
         username: AUCTORITAS_USERNAME,
@@ -895,7 +911,7 @@ export const handleStripeWebhook = async (req, res) => {
 
   async function checkDatabaseConnection() {
     try {
-     
+
       await subscriptionSession.findOne({});
       await SubscriptionRenewal.findOne({});
       return { statusCode: statusCode.ok, status: responseStatus.success, message: messages.dbConnected, data: {} }
@@ -909,20 +925,26 @@ export const handleStripeWebhook = async (req, res) => {
 
   async function waitForSubscriptionData(subscriptionId, invoiceId, retries = 70, delay = 60000) {
     for (let i = 0; i < retries; i++) {
+
       console.log("");
-      console.log(` retry no. ${i+1} for subscriptionID :-${subscriptionId}`);
+      console.log(` retry no. ${i + 1} for subscriptionID :-${subscriptionId}`);
       console.log("");
       const subscriptionRenewalData = await SubscriptionRenewal.findOne({
         subscriptionId: subscriptionId,
         "invoiceDetails.invoiceId": invoiceId
       });
       if (subscriptionRenewalData) {
-        // console.log("🚀 ~ waitForSubscriptionData ~ subscriptionRenewalData:", subscriptionRenewalData)
+        console.log("🚀 ~ waitForSubscriptionData ~ subscriptionRenewalData found , subscription is of type:-", subscriptionRenewalData?.subscriptionType)
         return subscriptionRenewalData;
-        
+
       }
-      await new Promise(resolve => setTimeout(resolve, delay)); 
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
+    console.log("");
+
+    console.log("no data found in updated subscription");
+    console.log("");
+
 
     return res.status(statusCode.errorPage).json({
       status: responseStatus.failure,

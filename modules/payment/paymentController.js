@@ -1,13 +1,13 @@
 
-import Stripe from 'stripe';  
-import { stripeSecretKey,FRONT_END_BASE_URL } from '../../config/config.js'; 
+import Stripe from 'stripe';
 import response from "../../responseHandler/response.js";
 import { messages, responseStatus, statusCode } from "../../core/constants/constant.js";
+import {stripeSecretKey, FRONT_END_BASE_URL} from "../../config/config.js";
 
 
 import subscriptionSession from '../../models/subscriptionSession.js'
 
-const stripe = new Stripe(stripeSecretKey); 
+const stripe = new Stripe(stripeSecretKey);
 
 export const paymentSession = async (req, res) => {
   try {
@@ -25,6 +25,7 @@ export const paymentSession = async (req, res) => {
     }
 
     const emailId = payload.emailId;
+
     const integraPublicKeyId = payload.integraPublicKeyId;
     console.log("🚀 ~ paymentSession ~ integraPublicKeyId:", integraPublicKeyId)
     if (!payload.integraPublicKeyId || typeof payload.integraPublicKeyId !== 'string') {
@@ -53,14 +54,43 @@ export const paymentSession = async (req, res) => {
 
 
     const priceId = payload.priceId;
-    const name = payload.name || '';
+    const name = payload.name;
+   
     const organizationid = payload.organizationid || '';
 
 
+
+    const isMainnet = payload?.isMainnet;
+
+    if (typeof isMainnet !== 'boolean') {
+      console.log("🚀 ~ paymentSession ~ payload.is_mainnet_network:", isMainnet)
+
+      return response.HttpResponse(
+        res,
+        statusCode.badRequest,
+        responseStatus.failure,
+        messages.isMainnetNotValid,
+        {},
+      );
+    } 
+  
+
+    
+  
+
+    console.log("🚀 ~ paymentSession ~ isMainnet:", isMainnet)
+    console.log("");
+
     console.log("🚀 ~ paymentSession ~ priceId:", priceId);
+    console.log("");
+  
     console.log("🚀 ~ paymentSession ~ organizationid:", organizationid);
+    console.log("");
 
+    console.log("🚀 ~ paymentSession ~ emailId:", emailId)
+    console.log("🚀 ~ paymentSession ~ name:", name)
 
+    
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -78,7 +108,8 @@ export const paymentSession = async (req, res) => {
         IntegraId: integraPublicKeyId,
         emailId: emailId,
         tokens: tokens,
-        priceId: priceId
+        priceId: priceId,
+        isMainnet: isMainnet
       },
     });
 
@@ -108,7 +139,7 @@ export const paymentSession = async (req, res) => {
       statusCode.created,
       responseStatus.success,
       messages.urlredirected,
-      {url:session.url}
+      { url: session.url }
     );
   } catch (err) {
     console.error('Error creating Checkout Session:', err);

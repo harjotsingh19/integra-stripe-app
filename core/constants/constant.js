@@ -31,6 +31,7 @@ const messages = {
     internalServerError:'Internal Server Error',
     integraPublicKeyIdNotFound:"integra public key not valid",
     invoiceFalseStatus:"invoice paid status is false , tokens will be added later, once paymen tis confirmed",
+    isMainnetNotValid:"isMainnet is invalid",
     // J
     // K
     // L
