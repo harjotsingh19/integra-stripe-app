@@ -11,7 +11,10 @@ const stripe = new Stripe(stripeSecretKey);
 
 export const paymentSession = async (req, res) => {
   try {
+
+    console.log("🚀 ~ paymentSession ~ payment session started")
     const payload = req.body;
+		console.log("TCL: paymentSession -> payload", payload)
 
     // Basic validation
     if (!payload.priceId || typeof payload.priceId !== 'string') {

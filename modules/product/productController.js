@@ -1,13 +1,13 @@
 
-import Stripe from 'stripe';  // Correctly import Stripe
-import { stripeSecretKey } from '../../config/config.js';  // Import named export
-import SubscriptionPlan from '../../models/subscriptionPlans.js'; // Make sure to define your Product model
+import Stripe from 'stripe';  
+import { stripeSecretKey } from '../../config/config.js';  
+import SubscriptionPlan from '../../models/subscriptionPlans.js'; 
 import response from "../../responseHandler/response.js";
 import { messages, responseStatus, statusCode } from "../../core/constants/constant.js";
 
 
 
-const stripe = new Stripe(stripeSecretKey);  // Initialize Stripe with the named export
+const stripe = new Stripe(stripeSecretKey);  
 
 
 export const getSubscriptionPlans = async (req, res) => {
@@ -23,6 +23,8 @@ export const getSubscriptionPlans = async (req, res) => {
         {},
       );
     }
+    console.log("plans found");
+    
     return response.HttpResponse(
       res,
       statusCode.ok,
