@@ -63,7 +63,7 @@ export const paymentSession = async (req, res) => {
 
 
 
-    const isMainnet = payload?.isMainnet;
+    const isMainnet = payload?.is_mainnet_network;
 
     if (typeof isMainnet !== 'boolean') {
       console.log("🚀 ~ paymentSession ~ payload.is_mainnet_network:", isMainnet)
