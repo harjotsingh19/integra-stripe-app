@@ -23,6 +23,8 @@ export const getSubscriptionPlans = async (req, res) => {
         {},
       );
     }
+    console.log("plans found");
+    
     return response.HttpResponse(
       res,
       statusCode.ok,

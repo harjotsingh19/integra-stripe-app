@@ -2,16 +2,23 @@
 import Stripe from 'stripe';
 import response from "../../responseHandler/response.js";
 import { messages, responseStatus, statusCode } from "../../core/constants/constant.js";
-import {stripeSecretKey, FRONT_END_BASE_URL} from "../../config/config.js";
+import { stripeSecretKey, FRONT_END_BASE_URL, Blockchain_mainnet_url, Blockchain_testnet_url } from "../../config/config.js";
 
-
+import axios, { HttpStatusCode } from 'axios';
 import subscriptionSession from '../../models/subscriptionSession.js'
 
 const stripe = new Stripe(stripeSecretKey);
 
 export const paymentSession = async (req, res) => {
   try {
+
+    console.log("🚀 ~ paymentSession ~ payment session started")
     const payload = req.body;
+
+
+    console.log("");
+
+    console.log("TCL: paymentSession -> payload", payload)
 
     // Basic validation
     if (!payload.priceId || typeof payload.priceId !== 'string') {
@@ -55,12 +62,12 @@ export const paymentSession = async (req, res) => {
 
     const priceId = payload.priceId;
     const name = payload.name;
-   
+
     const organizationid = payload.organizationid || '';
 
 
 
-    const isMainnet = payload?.isMainnet;
+    const isMainnet = payload?.is_mainnet_network;
 
     if (typeof isMainnet !== 'boolean') {
       console.log("🚀 ~ paymentSession ~ payload.is_mainnet_network:", isMainnet)
@@ -72,25 +79,42 @@ export const paymentSession = async (req, res) => {
         messages.isMainnetNotValid,
         {},
       );
-    } 
-  
+    }
 
+    let Blockchain_url = isMainnet ? Blockchain_mainnet_url : Blockchain_testnet_url;
+
+
+    console.log("TCL: paymentSession -> Blockchain_url", Blockchain_url)
+    let getPublickey
+    try {
+      getPublickey = await axios.get(`${Blockchain_url}/integraKey/${integraPublicKeyId}`);
+			console.log("TCL: paymentSession -> getPublickey", getPublickey.data)
+    } catch (error) {
+   
+      console.log("error while fetching data for this integraid :- ",integraPublicKeyId);
+        return response.HttpResponse(
+          res,
+          statusCode.badRequest,
+          responseStatus.failure,
+          messages.integraPublicKeyDataNotFound,
+          {},
+        );
+      }
     
-  
 
     console.log("🚀 ~ paymentSession ~ isMainnet:", isMainnet)
     console.log("");
 
     console.log("🚀 ~ paymentSession ~ priceId:", priceId);
     console.log("");
-  
+
     console.log("🚀 ~ paymentSession ~ organizationid:", organizationid);
     console.log("");
 
     console.log("🚀 ~ paymentSession ~ emailId:", emailId)
     console.log("🚀 ~ paymentSession ~ name:", name)
 
-    
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {

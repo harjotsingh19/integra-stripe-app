@@ -1,0 +1,22 @@
+{"TimeStamp": "2024-10-14T12:21:30.96741", "Log": "Connecting to the container 'integra-stripe-api'..."}
+{"TimeStamp": "2024-10-14T12:21:30.99022", "Log": "Successfully Connected to container: 'integra-stripe-api' [Revision: 'integra-stripe-api--qxoawot-ff5cd875-22ffb', Replica: 'integra-stripe-api--qxoawot']"}
+{"TimeStamp": "2024-10-14T12:21:30.9904617Z", "Log": "  phone_number_collection: { enabled: false },"}
+{"TimeStamp": "2024-10-14T12:21:30.9905542Z", "Log": "  recovered_from: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9906174Z", "Log": "  saved_payment_method_options: {"}
+{"TimeStamp": "2024-10-14T12:21:30.9906602Z", "Log": "    allow_redisplay_filters: [ 'always' ],"}
+{"TimeStamp": "2024-10-14T12:21:30.9906988Z", "Log": "    payment_method_remove: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9907349Z", "Log": "    payment_method_save: null"}
+{"TimeStamp": "2024-10-14T12:21:30.9907704Z", "Log": "  },"}
+{"TimeStamp": "2024-10-14T12:21:30.9908087Z", "Log": "  setup_intent: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.990846Z", "Log": "  shipping_address_collection: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9908846Z", "Log": "  shipping_cost: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9909274Z", "Log": "  shipping_details: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9909657Z", "Log": "  shipping_options: [],"}
+{"TimeStamp": "2024-10-14T12:21:30.9910019Z", "Log": "  status: 'open',"}
+{"TimeStamp": "2024-10-14T12:21:30.9910387Z", "Log": "  submit_type: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9910754Z", "Log": "  subscription: null,"}
+{"TimeStamp": "2024-10-14T12:21:30.9911113Z", "Log": "  success_url: 'https://integra-stripe-fe.orangemushroom-0dd6913e.eastus.azurecontainerapps.io/complete?session_id={CHECKOUT_SESSION_ID}',"}
+{"TimeStamp": "2024-10-14T12:21:30.9911499Z", "Log": "  total_details: { amount_discount: 0, amount_shipping: 0, amount_tax: 0 },"}
+{"TimeStamp": "2024-10-14T12:21:30.9911907Z", "Log": "  ui_mode: 'hosted',"}
+{"TimeStamp": "2024-10-14T12:21:30.9912315Z", "Log": "  url: 'https://checkout.stripe.com/c/pay/cs_test_a12qMYp81PRPs7VZ9QPdWkBtivMJkuFaKFAhMnLeJCU4ovknic0zCRESep#fid2cGd2ZndsdXFsamtQa2x0cGBrYHZ2QGtkZ2lgYSc%2FY2RpdmApJ2R1bE5gfCc%2FJ3VuWnFgdnFaMDRNNTNCTUJ9YW5KMUFfdGFNMnFgVFNxZjBfd2l8dnAxRmN2UmlkV3w3ZDxVS0dTT31haGExRDY1TVJ2PW5iNmE2SksyQWFHNjJXNjN8bWlSYzVtXWd8N0A1NXFKMG9TPWlsJyknY3dqaFZgd3Ngdyc%2FcXdwYCknaWR8anBxUXx1YCc%2FJ3Zsa2JpYFpscWBoJyknYGtkZ2lgVWlkZmBtamlhYHd2Jz9xd3BgeCUl'"}
+{"TimeStamp": "2024-10-14T12:21:30.991277Z", "Log": "}"}

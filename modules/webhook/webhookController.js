@@ -68,12 +68,15 @@ export const handleStripeWebhook = async (req, res) => {
 
 
         // Check if the subscription is for first time
+        console.log();
+        console.log("1111111111111111111111111111111111111111111111111111111111111111111111111111");
+        console.log();
 
         const previousRenewal = await SubscriptionRenewal.findOne({ subscriptionId }).sort({ renewalDate: -1 });
 
         console.log("🚀 ~ handleStripeWebhook ~ previousRenewal:", previousRenewal)
 
-
+        console.log("22222222222222222222222222222222222222222222222222222222222222222222222222222222");
 
         if (previousRenewal?.renewalDate <= 0 || previousRenewal?.renewalDate == null) {
           console.log("🚀 ~ handleStripeWebhook ~ previousRenewal?.renewalDate:", previousRenewal?.renewalDate)
@@ -117,11 +120,17 @@ export const handleStripeWebhook = async (req, res) => {
         console.log("🚀 ~ existingRenewal:", existingRenewal)
         console.log("🚀 ~ handleStripeWebhook ~ existingRenewal.tokensCredited:", existingRenewal?.tokensCredited)
 
-
+        console.log();
+        console.log("33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333");
+        console.log();
         // Fetch the existing subscription record
         let sessionData = await subscriptionSession.findOne({ 'subscriptionDetails.subscriptionId': subscriptionId });
         console.log("🚀 ~ handleStripeWebhook ~ sessionData:", sessionData)
 
+        console.log();
+
+        console.log("444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444");
+        console.log();
         if (!sessionData) {
           return res.status(statusCode.ok).json({ status: responseStatus.success, message: messages.subscriptionNotFoundWithSession });
         }
@@ -328,7 +337,7 @@ export const handleStripeWebhook = async (req, res) => {
           weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
           hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
-        console.log("🚀 ~ handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
+        console.log("🚀 ~ invoice payment succeeded event, begins handleStripeWebhook ~ event hit time when subcription renewal event got hit:", eventHitTime)
 
         await checkDatabaseConnection();
 
@@ -424,11 +433,23 @@ export const handleStripeWebhook = async (req, res) => {
 
               console.log("subscriptionId :- ", invoice.id);
 
+              console.log();
+              console.log("555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555");
+              console.log();
+
+
+
               const updated = await SubscriptionRenewal.findOneAndUpdate(
                 { subscriptionId, "invoiceDetails.invoiceId": invoice.id },
                 { $set: { tokensCredited: true, integraPublicKeyData: tokenInfo.data, "invoiceDetails.paid": true, paid: true } },
                 { new: true }
               );
+
+              console.log();
+              console.log("666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666");
+              console.log();
+
+
               console.log("🚀 ~ handleStripeWebhook ~ updated:", updated)
 
               console.log(`Tokens credited for : ${integraPublicKeyId} with event id : ${event.id}`);
@@ -529,10 +550,10 @@ export const handleStripeWebhook = async (req, res) => {
 
 
           if (!sessionData) {
-            console.log('session data not found');
+            console.log('INSIDE session data not found for sessionId', sessionId);
             return res.status(400).json({
               status: responseStatus.failure,
-              message: 'session data not found',
+              message: `session data not found for sessionId :- ${sessionId}`,
 
             });
           }
@@ -783,7 +804,7 @@ export const handleStripeWebhook = async (req, res) => {
                 tokenInfo.data
               );
 
-            } 
+            }
 
           } else {
             console.log("");
@@ -927,12 +948,22 @@ export const handleStripeWebhook = async (req, res) => {
     for (let i = 0; i < retries; i++) {
 
       console.log("");
+
+      console.log();
+      console.log("77777777777777777777777777777777777777777777777777777777777777777777777777777777");
+      console.log();
+
       console.log(` retry no. ${i + 1} for subscriptionID :-${subscriptionId}`);
       console.log("");
       const subscriptionRenewalData = await SubscriptionRenewal.findOne({
         subscriptionId: subscriptionId,
         "invoiceDetails.invoiceId": invoiceId
       });
+
+      console.log();
+      console.log("88888888888888888888888888888888888888888888888888888888888888888888888888888888888");
+      console.log();
+
       if (subscriptionRenewalData) {
         console.log("🚀 ~ waitForSubscriptionData ~ subscriptionRenewalData found , subscription is of type:-", subscriptionRenewalData?.subscriptionType)
         return subscriptionRenewalData;

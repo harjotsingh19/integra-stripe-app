@@ -65,6 +65,13 @@ const subscriptionRenewalSchema = new Schema({
   },
 },{ timestamps: true },);
 
+// Create an index for `renewalDate`
+subscriptionRenewalSchema.index({ renewalDate: -1 });
+
+// Create indexes for improved query performance
+subscriptionRenewalSchema.index({ subscriptionId: 1 }); // Index on subscriptionId
+subscriptionRenewalSchema.index({ "invoiceDetails.invoiceId": 1 }); // Index on invoiceDetails.invoiceId
+
 const SubscriptionRenewal = mongoose.model('SubscriptionRenewal', subscriptionRenewalSchema);
 
 export default SubscriptionRenewal;

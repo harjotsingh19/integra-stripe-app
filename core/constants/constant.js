@@ -29,9 +29,10 @@ const messages = {
     // I
     incorrectEmail: 'Incorrect Email.',
     internalServerError:'Internal Server Error',
-    integraPublicKeyIdNotFound:"integra public key not valid",
+    integraPublicKeyIdNotFound:"integraPublicKeyId is not valid",
+    integraPublicKeyDataNotFound:"no data found for this integraPublicKeyId",
     invoiceFalseStatus:"invoice paid status is false , tokens will be added later, once paymen tis confirmed",
-    isMainnetNotValid:"isMainnet is invalid",
+    isMainnetNotValid:"is_mainnet_network not found",
     // J
     // K
     // L

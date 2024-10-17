@@ -10,6 +10,7 @@ import webhookRoutes from './modules/webhook/webhookRoute.js';
 const app = express();
 
 app.use(cors({
+  // origin: ['https://subscribe.integraledger.com'],
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'], 
   allowedHeaders: [
