@@ -11,6 +11,24 @@ jobs:
     env:
       ACR_NAME1: ACR_NAME
 
+    - name: Set Variables
+      run: |
+        echo "ACR_NAME=switchboardregistry" >> $GITHUB_ENV
+        echo "ACR_LOGIN_SERVER=switchboardregistry.azurecr.io" >> $GITHUB_ENV
+        UNIQUE_TAG=$(date +%Y%m%d%H%M%S)
+        echo "UNIQUE_TAG=$UNIQUE_TAG" >> $GITHUB_ENV
+        
+        if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          echo "ACR_IMAGE_NAME=switchboardregistry.azurecr.io/react-switchboard:$UNIQUE_TAG" >> $GITHUB_ENV
+          echo "CONTAINER_APP_NAME=react-switchboard" >> $GITHUB_ENV
+        elif [ "${{ github.ref }}" = "refs/heads/Berger-may4-2" ]; then
+          echo "ACR_IMAGE_NAME=switchboardregistry.azurecr.io/react-switchboard:$UNIQUE_TAG" >> $GITHUB_ENV
+          echo "CONTAINER_APP_NAME=react-switchboard-rd1" >> $GITHUB_ENV
+        else
+          echo "ACR_IMAGE_NAME=switchboardregistry.azurecr.io/react-switchboard:$UNIQUE_TAG" >> $GITHUB_ENV
+          echo "CONTAINER_APP_NAME=react-switchboard-dev" >> $GITHUB_ENV
+        fi  
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -22,7 +40,7 @@ jobs:
       run: |
         set -x  # Enable debugging
         echo "Logging in to Azure CLI"
-        echo This is the build configuration: $ACR_NAME1
+        echo This is the build configuration: ${{ env.CONTAINER_APP_NAME }}
         echo "ACR Name: ${{ secrets.ACR_NAME }}"  # Using secrets correctly
         echo "Image Name: ${{ secrets.IMAGE_NAME }}"  # Printing Image Name (not sensitive)
         echo "Masked password: [REDACTED]"  # Avoid printing actual password
