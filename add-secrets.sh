@@ -1,7 +1,7 @@
 # Define secrets
 secrets=(
   "AZURE_USERNAME=navpreet.singh@debutinfotech.com"
-  "AZURE_PASSWORD=Welcome01@#"
+  "AZURE_PASSWORD=Welcome01@#$"
   "ACR_NAME=integrastriperegistry"
   "RESOURCE_GROUP=integra-stripe"
   "CONTAINER_APP_NAME=stripe-api"
