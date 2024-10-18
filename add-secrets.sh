@@ -8,7 +8,7 @@ secrets=(
   "IMAGE_NAME=striperegistry.azurecr.io/stripe-api"
 )
 
-# Loop through and add each secret
+# Loop through and add each secret 
 for secret in "${secrets[@]}"; do
   key="${secret%%=*}" # Extract secret name
   value="${secret#*=}" # Extract secret value
