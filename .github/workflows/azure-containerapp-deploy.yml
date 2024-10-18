@@ -19,7 +19,7 @@ jobs:
     - name: Log in to Azure CLI using username/password
       run: |
         echo "Logging in to Azure CLI"
-        echo "ACR Name: ${{ secrets.ACR_NAME }}"  # Printing ACR Name (not sensitive)
+        echo "ACR Name: ${{ env.ACR_NAME  }}"
         echo "Image Name: ${{ secrets.IMAGE_NAME }}"  # Printing Image Name (not sensitive)
         echo "Masked password: ${{ secrets.AZURE_PASSWORD }}
         echo "Masked Username: ${{ secrets.AZURE_USERNAME }}"
