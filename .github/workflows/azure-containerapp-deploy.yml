@@ -9,7 +9,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      ACR_NAME: ${{ secrets.ACR_NAME }}
+      ACR_NAME1: ACR_NAME
 
     steps:
     - name: Checkout code
@@ -22,6 +22,7 @@ jobs:
       run: |
         set -x  # Enable debugging
         echo "Logging in to Azure CLI"
+        echo This is the build configuration: $ACR_NAME1
         echo "ACR Name: ${{ secrets.ACR_NAME }}"  # Using secrets correctly
         echo "Image Name: ${{ secrets.IMAGE_NAME }}"  # Printing Image Name (not sensitive)
         echo "Masked password: [REDACTED]"  # Avoid printing actual password
