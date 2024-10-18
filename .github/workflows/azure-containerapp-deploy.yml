@@ -11,6 +11,17 @@ jobs:
     env:
       ACR_NAME1: ACR_NAME
 
+    
+        fi  
+
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Set Variables
       run: |
         echo "ACR_NAME=switchboardregistry" >> $GITHUB_ENV
@@ -26,15 +37,7 @@ jobs:
           echo "CONTAINER_APP_NAME=react-switchboard-rd1" >> $GITHUB_ENV
         else
           echo "ACR_IMAGE_NAME=switchboardregistry.azurecr.io/react-switchboard:$UNIQUE_TAG" >> $GITHUB_ENV
-          echo "CONTAINER_APP_NAME=react-switchboard-dev" >> $GITHUB_ENV
-        fi  
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+          echo "CONTAINER_APP_NAME=react-switchboard-dev" >> $GITHUB_ENV  
 
     - name: Log in to Azure CLI using username/password
       run: |
