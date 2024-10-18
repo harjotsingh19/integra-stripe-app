@@ -2,8 +2,8 @@
 secrets=(
   "AZURE_USERNAME=navpreet.singh@debutinfotech.com"
   "AZURE_PASSWORD=Welcome01@#"
-  "ACR_NAME=striperegistry"
-  "RESOURCE_GROUP=integra-stripe-group"
+  "ACR_NAME=integrastriperegistry"
+  "RESOURCE_GROUP=integra-stripe"
   "CONTAINER_APP_NAME=stripe-api"
   "IMAGE_NAME=striperegistry.azurecr.io/stripe-api"
 )
