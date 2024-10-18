@@ -20,11 +20,12 @@ jobs:
 
     - name: Log in to Azure CLI using username/password
       run: |
+        set -x  # Enable debugging
         echo "Logging in to Azure CLI"
-        echo "ACR Name: $ACR_NAME "
+        echo "ACR Name: ${{ secrets.ACR_NAME }}"  # Using secrets correctly
         echo "Image Name: ${{ secrets.IMAGE_NAME }}"  # Printing Image Name (not sensitive)
-        echo "Masked password: ${{ secrets.AZURE_PASSWORD }}
-        echo "Masked Username: ${{ secrets.AZURE_USERNAME }}"
+        echo "Masked password: [REDACTED]"  # Avoid printing actual password
+        echo "Masked Username: [REDACTED]"  # Avoid printing actual username
         az login -u ${{ secrets.AZURE_USERNAME }} -p ${{ secrets.AZURE_PASSWORD }}
         az acr login --name ${{ secrets.ACR_NAME }}
 
