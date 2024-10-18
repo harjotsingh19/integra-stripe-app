@@ -18,17 +18,27 @@ jobs:
 
     - name: Log in to Azure CLI using username/password
       run: |
+        echo "Logging in to Azure CLI"
+        echo "ACR Name: ${{ secrets.ACR_NAME }}"  # Printing ACR Name (not sensitive)
+        echo "Image Name: ${{ secrets.IMAGE_NAME }}"  # Printing Image Name (not sensitive)
+        echo "Masked Username: $(echo ${ secrets.AZURE_USERNAME } | head -c 3)***"
+        echo "Masked Username: $(echo ${ secrets.AZURE_PASSWORD } | head -c 3)***"
         az login -u ${{ secrets.AZURE_USERNAME }} -p ${{ secrets.AZURE_PASSWORD }}
         az acr login --name ${{ secrets.ACR_NAME }}
 
     - name: Build Docker Image
       run: |
+        echo "Building Docker Image with SHA: ${{ github.sha }}"
         docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:${{ github.sha }} .
 
     - name: Push Docker Image to ACR
       run: |
+        echo "Pushing Docker Image to ACR"
         docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
 
     - name: Deploy to Azure Container App
       run: |
+        echo "Deploying to Azure Container App"
+        echo "Container App Name: ${{ secrets.CONTAINER_APP_NAME }}"
+        echo "Resource Group: ${{ secrets.RESOURCE_GROUP }}"
         az containerapp update --name ${{ secrets.CONTAINER_APP_NAME }} --resource-group ${{ secrets.RESOURCE_GROUP }} --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
